@@ -11,6 +11,7 @@ app = FastAPI()
 async def info():
     return sys.version
 
+
 @app.get("/")
 async def get_named_entities(text: str):
     return NamedEntitiesFromTextUseCase(text).get_entities()

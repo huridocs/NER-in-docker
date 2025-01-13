@@ -1,0 +1,12 @@
+services:
+  ner-gpu:
+    extends:
+      file: docker-compose.yml
+      service: ner
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]

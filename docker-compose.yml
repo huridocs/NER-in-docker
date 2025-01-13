@@ -1,0 +1,11 @@
+services:
+  ner:
+    container_name: ner
+    entrypoint: [ "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--chdir", "./src", "drivers.rest.app:app", "--bind", "0.0.0.0:5070", "--timeout", "10000"]
+    init: true
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5070:5070"
