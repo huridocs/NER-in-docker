@@ -40,7 +40,7 @@ class TestNamedEntityMergerUseCase(TestCase):
         named_entities_grouped = NamedEntityMergerUseCase().merge([name_entity_1, name_entity_2, name_entity_3])
 
         self.assertEqual(1, len(named_entities_grouped))
-        self.assertEqual("María Diaz", named_entities_grouped[0].text)
+        self.assertEqual("Maria, Díaz", named_entities_grouped[0].text)
         self.assertEqual(NamedEntityType.PERSON, named_entities_grouped[0].type)
 
     def test_merge_when_abbreviations(self):
@@ -105,11 +105,13 @@ class TestNamedEntityMergerUseCase(TestCase):
         self.assertEqual("María Diaz Pe", named_entities_grouped[1].text)
 
     def test_merge_when_two_last_names_in_same_context(self):
-        name_entity_1 = NamedEntity(type=NamedEntityType.PERSON, text="María Diaz", context="context")
-        name_entity_2 = NamedEntity(type=NamedEntityType.PERSON, text="Maria Díaz Pérez", context="context")
-        named_entities_grouped = NamedEntityMergerUseCase().merge([name_entity_1, name_entity_2])
+        named_entities = [NamedEntity(type=NamedEntityType.PERSON, text="María Diaz")]
+        named_entities += [NamedEntity(type=NamedEntityType.PERSON, text="Maria Díaz Pérez")]
 
-        self.assertEqual(1, len(named_entities_grouped))
+        other_entity = [NamedEntity(type=NamedEntityType.PERSON, text="Other Name")]
+        named_entities_grouped = NamedEntityMergerUseCase().merge(named_entities + other_entity)
+
+        self.assertEqual(2, len(named_entities_grouped))
         self.assertEqual("Maria Díaz Pérez", named_entities_grouped[0].text)
 
     def test_avoid_merge_when_different_context(self):
