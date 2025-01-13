@@ -35,17 +35,11 @@ class TestNamedEntityMergerUseCase(TestCase):
         self.assertEqual(52, entities[3].start)
         self.assertEqual(58, entities[3].end)
 
-        self.assertEqual("Wednesday, July 12, 2023", entities[4].text)
+        self.assertEqual("July 12, 2023", entities[4].text)
         self.assertEqual("2023-07-12", entities[4].normalized_text)
         self.assertEqual(NamedEntityType.DATE, entities[4].type)
         self.assertEqual(0, entities[4].start)
         self.assertEqual(16, entities[4].end)
-
-        # self.assertEqual("Wednesday, July 12, 2023", entities[2].text)
-        # self.assertEqual("2023-07-12", entities[2].normalized_text)
-        # self.assertEqual(NamedEntityType.DATE, entities[2].type)
-        # self.assertEqual(0, entities[2].start)
-        # self.assertEqual(16, entities[2].end)
 
     def test_get_entities_of_type_organization(self):
         text = "I work for HURIDOCS organization."

@@ -1,10 +1,12 @@
 import dateparser
+from pathlib import Path
 from dateparser.search import search_dates
 from gliner import GLiNER
+from configuration import MODELS_PATH
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
 
-classifier = GLiNER.from_pretrained("urchade/gliner_multi-v2.1")
+classifier = GLiNER.from_pretrained(Path(MODELS_PATH, "gliner"))
 
 
 class GetGLiNEREntitiesUseCase:
