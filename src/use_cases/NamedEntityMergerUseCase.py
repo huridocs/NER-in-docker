@@ -1,9 +1,10 @@
-from domain.NamedEntities import NamedEntitiesGrouped
+from domain.NamedEntity import NamedEntity
+from domain.NamedEntityGroup import NamedEntityGroup
 
 
 class NamedEntityMergerUseCase:
-    def __init__(self, named_entities: NamedEntitiesGrouped):
+    def __init__(self, named_entities: list[NamedEntity]):
         self.named_entities = named_entities
 
-    def merge(self) -> NamedEntitiesGrouped:
+    def merge(self) -> list[NamedEntityGroup]:
         pass
