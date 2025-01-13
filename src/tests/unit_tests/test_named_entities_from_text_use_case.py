@@ -38,8 +38,8 @@ class TestNamedEntityMergerUseCase(TestCase):
         self.assertEqual("July 12, 2023", entities[4].text)
         self.assertEqual("2023-07-12", entities[4].normalized_text)
         self.assertEqual(NamedEntityType.DATE, entities[4].type)
-        self.assertEqual(0, entities[4].start)
-        self.assertEqual(16, entities[4].end)
+        self.assertEqual(74, entities[4].start)
+        self.assertEqual(87, entities[4].end)
 
     def test_get_entities_of_type_organization(self):
         text = "I work for HURIDOCS organization."
@@ -53,12 +53,12 @@ class TestNamedEntityMergerUseCase(TestCase):
         self.assertEqual(19, entities[0].end)
 
     def test_get_entities_of_type_law(self):
-        text = "It was the law ExampleLaw123"
+        text = "The Senate passed Resolution No. 122, establishing a set of rules for the impeachment trial."
         entities: list[NamedEntity] = NamedEntitiesFromTextUseCase(text).get_entities()
 
-        self.assertEqual(1, len(entities))
-        self.assertEqual("ExampleLaw123", entities[0].text)
-        self.assertEqual("ExampleLaw123", entities[0].normalized_text)
-        self.assertEqual(NamedEntityType.LAW, entities[0].type)
-        self.assertEqual(11, entities[0].start)
-        self.assertEqual(24, entities[0].end)
+        self.assertEqual(2, len(entities))
+        self.assertEqual("Resolution No. 122", entities[1].text)
+        self.assertEqual("Resolution No. 122", entities[1].normalized_text)
+        self.assertEqual(NamedEntityType.LAW, entities[1].type)
+        self.assertEqual(18, entities[1].start)
+        self.assertEqual(36, entities[1].end)
