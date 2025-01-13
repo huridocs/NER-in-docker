@@ -5,7 +5,6 @@ from domain.NamedEntityType import NamedEntityType
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 
 
-
 class TestNamedEntityMergerUseCase(TestCase):
     def test_get_entities(self):
         text = "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023"
