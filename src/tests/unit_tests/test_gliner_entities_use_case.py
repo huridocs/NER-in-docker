@@ -20,7 +20,7 @@ class TestGLiNEREntitiesUseCase(TestCase):
         self.assertEqual("2024-01-13", entities[0].normalized_text)
 
     def test_avoid_uncompleted_date_extraction(self):
-        text = "Wednesday"
+        text = "It should be Wednesday"
         entities: list[NamedEntity] = GetGLiNEREntitiesUseCase().extract_dates(text)
         self.assertEqual(0, len(entities))
 

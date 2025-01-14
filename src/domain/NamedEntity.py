@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from unidecode import unidecode
-
+import dateparser
 from domain.NamedEntityType import NamedEntityType
 import country_converter as coco
 
@@ -21,12 +21,23 @@ class NamedEntity(BaseModel):
         normalized_text = " ".join(sorted(normalized_text.split()))
         return unidecode(normalized_text)
 
+    def normalize_location(self, text):
+        iso_3 = coco.convert(names=[text], to="ISO3")
+        return iso_3 if iso_3 != "not found" else self.normalize_text(text)
+
+    def normalize_date(self, text):
+        if self.normalized_text:
+            return self.normalized_text
+        return dateparser.parse(text).strftime("%Y-%m-%d")
+
     def normalize_entity_text(self):
-        if self.type == NamedEntityType.PERSON:
-            self.normalized_text = self.normalize_text(self.text)
+        normalization_functions = {
+            NamedEntityType.PERSON: self.normalize_text,
+            NamedEntityType.ORGANIZATION: self.normalize_text,
+            NamedEntityType.LOCATION: self.normalize_location,
+            NamedEntityType.DATE: self.normalize_date,
+            NamedEntityType.LAW: self.normalize_text,
+        }
 
-        if self.type == NamedEntityType.LOCATION:
-            iso_3 = coco.convert(names=[self.text], to="ISO3")
-            self.normalized_text = iso_3 if iso_3 != "not found" else self.normalize_text(self.text)
-
+        self.normalized_text = normalization_functions[self.type](self.text)
         return self

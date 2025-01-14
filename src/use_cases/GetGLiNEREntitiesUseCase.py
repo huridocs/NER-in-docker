@@ -1,4 +1,3 @@
-import dateparser
 from pathlib import Path
 from dateparser.search import search_dates
 from gliner import GLiNER
@@ -39,10 +38,9 @@ class GetGLiNEREntitiesUseCase:
                 NamedEntity(
                     type=NamedEntityType.DATE,
                     text=entity["text"],
-                    normalized_text=dateparser.parse(entity["text"]).strftime("%Y-%m-%d"),
                     start=entity["start"],
                     end=entity["end"],
-                )
+                ).normalize_entity_text()
             )
         return result
 

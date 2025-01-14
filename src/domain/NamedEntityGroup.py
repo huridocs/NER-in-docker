@@ -11,13 +11,13 @@ class NamedEntityGroup(BaseModel):
     named_entities: list[NamedEntity] = list()
     context: str = "default"
 
-    def belongs_to_group(self, named_entity: NamedEntity) -> bool:
-        if self.type != named_entity.type:
-            return False
+    def is_same_type(self, named_entity: NamedEntity) -> bool:
+        return self.type == named_entity.type
 
-        if self.text == named_entity.text:
-            return True
+    def is_exact_match(self, named_entity: NamedEntity) -> bool:
+        return self.text == named_entity.text
 
+    def is_similar_entity(self, named_entity: NamedEntity) -> bool:
         normalized_entity = named_entity.normalize_entity_text()
         entity_normalized_text = normalized_entity.normalized_text
 
@@ -95,7 +95,21 @@ class NamedEntityGroup(BaseModel):
         threshold = 100 * (length - 1) / length if length > 10 else 100
         return fuzz.ratio(text, other_text) >= threshold
 
+    def belongs_to_group(self, named_entity: NamedEntity) -> bool:
+        if not self.is_same_type(named_entity):
+            return False
+
+        if self.is_exact_match(named_entity):
+            return True
+
+        return self.is_similar_entity(named_entity)
+
     def add_named_entity(self, named_entity: NamedEntity):
+        if self.type == NamedEntityType.DATE and named_entity.normalized_text:
+            self.text = named_entity.normalized_text
+            self.named_entities.append(named_entity.normalize_entity_text())
+            return
+
         if len(named_entity.text) > len(self.text):
             self.text = named_entity.text
 
