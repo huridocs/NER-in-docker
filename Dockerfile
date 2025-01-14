@@ -16,6 +16,8 @@ RUN pip --default-timeout=1000 install -r requirements.txt
 
 WORKDIR /app
 COPY ./src/. ./src
+COPY ./models/. ./models/
+RUN python src/download_models.py
 
 ENV PYTHONPATH "${PYTHONPATH}:/app/src"
 

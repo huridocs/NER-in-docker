@@ -4,7 +4,7 @@ from domain.BoundingBox import BoundingBox
 from domain.NamedEntityType import NamedEntityType
 from domain.PDFNamedEntity import PDFNamedEntity
 from domain.PDFSegment import PDFSegment
-from port.PDFToSegmentsRepository import PDFToSegmentsRepository
+from ports.PDFToSegmentsRepository import PDFToSegmentsRepository
 from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
 
 
@@ -32,7 +32,7 @@ class DummyPDFToSegmentsRepository(PDFToSegmentsRepository):
 class TestNamedEntitiesFromPDFUseCase(TestCase):
 
     def test_get_entities(self):
-        pdf_path: Path = Path("../test_pdfs/test_document.pdf")
+        pdf_path: Path = Path("../end_to_end/test_pdfs/test_document.pdf")
         dummy_pdf_to_segment_repository = DummyPDFToSegmentsRepository()
         entities: list[PDFNamedEntity] = NamedEntitiesFromPDFUseCase(dummy_pdf_to_segment_repository).get_entities(pdf_path)
 

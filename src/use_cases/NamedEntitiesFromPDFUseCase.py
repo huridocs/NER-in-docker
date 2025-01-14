@@ -3,7 +3,7 @@ from pathlib import Path
 from domain.NamedEntity import NamedEntity
 from domain.PDFNamedEntity import PDFNamedEntity
 from domain.PDFSegment import PDFSegment
-from port.PDFToSegmentsRepository import PDFToSegmentsRepository
+from ports.PDFToSegmentsRepository import PDFToSegmentsRepository
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 
 

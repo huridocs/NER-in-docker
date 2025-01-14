@@ -18,7 +18,6 @@ services:
     image: ghcr.io/huridocs/pdf-document-layout-analysis:0.0.21
     init: true
     restart: unless-stopped
-    network_mode: host
     networks:
       - network-ner
     ports:

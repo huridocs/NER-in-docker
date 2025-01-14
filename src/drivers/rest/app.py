@@ -1,6 +1,7 @@
 import sys
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Form
+from pydantic import BaseModel
 
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 
@@ -12,6 +13,7 @@ async def info():
     return sys.version
 
 
-@app.get("/")
-async def get_named_entities(text: str):
-    return NamedEntitiesFromTextUseCase().get_entities(text)
+@app.post("/")
+async def get_named_entities(text: str = Form("")):
+    entities = NamedEntitiesFromTextUseCase().get_entities(text)
+    return entities
