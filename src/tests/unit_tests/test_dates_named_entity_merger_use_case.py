@@ -27,3 +27,11 @@ class TestDatesNamedEntityMergerUseCase(TestCase):
         self.assertEqual(2, len(locations_grouped[1].named_entities))
         self.assertEqual("11 4 2022", locations_grouped[1].named_entities[0].text)
         self.assertEqual("eleven april 2022", locations_grouped[1].named_entities[1].text)
+
+    def test_should_not_merge_dates_that_are_similar(self):
+        location_entities = [NamedEntity(type=NamedEntityType.DATE, text="12 May 2023", normalized_text="2023-05-12")]
+        location_entities += [NamedEntity(type=NamedEntityType.DATE, text="22 May 2023", normalized_text="2023-05-22")]
+
+        locations_grouped = NamedEntityMergerUseCase().merge(location_entities)
+
+        self.assertEqual(2, len(locations_grouped))
