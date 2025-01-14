@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.4.0-cuda11.8-cudnn9-runtime
+FROM pytorch/pytorch:2.5.1-cuda11.8-cudnn9-runtime
 
 RUN mkdir -p /app/src
 
