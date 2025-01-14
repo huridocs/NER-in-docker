@@ -61,9 +61,20 @@ class GetGLiNEREntitiesUseCase:
             last_slide_end_index += len(slide_text) + 1
             self.entities.extend(window_entities)
 
+    @staticmethod
+    def remove_uncompleted_dates(entities):
+        result = list()
+        for entity in entities:
+            if len(entity.text.split()) < 3:
+                continue
+            result.append(entity)
+
+        return result
+
     def extract_dates(self, text: str):
         words = text.split()
         self.iterate_through_windows(words)
         self.entities = [e for e in self.entities if search_dates(e.text)]
         self.entities = self.remove_overlapping_entities(self.entities)
+        self.entities = self.remove_uncompleted_dates(self.entities)
         return [entity for entity in self.entities if search_dates(entity.text)]

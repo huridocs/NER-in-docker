@@ -7,7 +7,6 @@ from use_cases.GetGLiNEREntitiesUseCase import GetGLiNEREntitiesUseCase
 
 class TestGLiNEREntitiesUseCase(TestCase):
     def test_datetime_normalized(self):
-
         window_entities: list[dict] = [{"start": 0, "end": 0, "text": "12 January 2024"}]
         entities: list[NamedEntity] = GetGLiNEREntitiesUseCase.convert_to_named_entity_type(window_entities)
         self.assertEqual("2024-01-12", entities[0].normalized_text)
