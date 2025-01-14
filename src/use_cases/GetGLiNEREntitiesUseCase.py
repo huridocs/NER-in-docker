@@ -18,15 +18,15 @@ class GetGLiNEREntitiesUseCase:
 
     @staticmethod
     def remove_overlapping_entities(entities: list[NamedEntity]):
-        sorted_entities = sorted(entities, key=lambda x: (x.start, -len(x.text)))
+        sorted_entities = sorted(entities, key=lambda x: (x.character_start, -len(x.text)))
 
         result = []
         last_end = -1
 
         for entity in sorted_entities:
-            if entity.start >= last_end:
+            if entity.character_start >= last_end:
                 result.append(entity)
-                last_end = entity.end
+                last_end = entity.character_end
 
         return result
 
@@ -38,8 +38,8 @@ class GetGLiNEREntitiesUseCase:
                 NamedEntity(
                     type=NamedEntityType.DATE,
                     text=entity["text"],
-                    start=entity["start"],
-                    end=entity["end"],
+                    character_start=entity["start"],
+                    character_end=entity["end"],
                 ).normalize_entity_text()
             )
         return result
@@ -53,8 +53,8 @@ class GetGLiNEREntitiesUseCase:
             window_entities = self.convert_to_named_entity_type(window_entities)
 
             for entity in window_entities:
-                entity.start += last_slide_end_index
-                entity.end += last_slide_end_index
+                entity.character_start += last_slide_end_index
+                entity.character_end += last_slide_end_index
 
             slide_words = words[i : i + self.SLIDE_SIZE]
             slide_text = " ".join(slide_words)

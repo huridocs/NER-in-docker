@@ -14,5 +14,5 @@ class TestFlairEntitiesUseCase(TestCase):
         self.assertEqual("Maria Rodriguez", entities[0].text)
         self.assertEqual("Maria Rodriguez", entities[0].normalized_text)
         self.assertEqual(NamedEntityType.PERSON, entities[0].type)
-        self.assertEqual(0, entities[0].start)
-        self.assertEqual(15, entities[0].end)
+        self.assertEqual(0, entities[0].character_start)
+        self.assertEqual(15, entities[0].character_end)

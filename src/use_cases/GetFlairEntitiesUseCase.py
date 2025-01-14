@@ -10,13 +10,13 @@ class GetFlairEntitiesUseCase:
 
     @staticmethod
     def remove_overlapping_entities(entities: list[NamedEntity]) -> list[NamedEntity]:
-        sorted_entities = sorted(entities, key=lambda x: (x.start, -len(x.text)))
+        sorted_entities = sorted(entities, key=lambda x: (x.character_start, -len(x.text)))
         result = []
         last_end = -1
         for entity in sorted_entities:
-            if entity.start >= last_end:
+            if entity.character_start >= last_end:
                 result.append(entity)
-                last_end = entity.end
+                last_end = entity.character_end
         return result
 
     @staticmethod
@@ -30,8 +30,8 @@ class GetFlairEntitiesUseCase:
                     type=NamedEntityType.from_flair_type(entity.tag),
                     text=entity.text,
                     normalized_text=entity.text,
-                    start=entity.start_position,
-                    end=entity.end_position,
+                    character_start=entity.start_position,
+                    character_end=entity.end_position,
                 )
             )
         return result

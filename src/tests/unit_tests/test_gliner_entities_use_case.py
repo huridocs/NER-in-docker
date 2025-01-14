@@ -25,9 +25,9 @@ class TestGLiNEREntitiesUseCase(TestCase):
 
     def test_remove_overlapping_entities(self):
         window_entities: list[NamedEntity] = [
-            NamedEntity(type=NamedEntityType.DATE, start=0, end=10, text="12 January 2024"),
-            NamedEntity(type=NamedEntityType.DATE, start=3, end=15, text="12 January 2024"),
-            NamedEntity(type=NamedEntityType.DATE, start=0, end=15, text="12 January 2024"),
+            NamedEntity(type=NamedEntityType.DATE, character_start=0, character_end=10, text="12 January 2024"),
+            NamedEntity(type=NamedEntityType.DATE, character_start=3, character_end=15, text="12 January 2024"),
+            NamedEntity(type=NamedEntityType.DATE, character_start=0, character_end=15, text="12 January 2024"),
         ]
         entities: list[NamedEntity] = GetGLiNEREntitiesUseCase().remove_overlapping_entities(window_entities)
         self.assertEqual(len(entities), 1)

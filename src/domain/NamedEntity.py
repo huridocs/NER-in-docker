@@ -9,9 +9,8 @@ class NamedEntity(BaseModel):
     type: NamedEntityType
     text: str
     normalized_text: str = ""
-    start: int = 0
-    end: int = 0
-    context: str = "default"
+    character_start: int = 0
+    character_end: int = 0
 
     @staticmethod
     def normalize_text(text: str) -> str:

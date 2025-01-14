@@ -4,13 +4,12 @@ from use_cases.GetGLiNEREntitiesUseCase import GetGLiNEREntitiesUseCase
 
 
 class NamedEntitiesFromTextUseCase:
-    def __init__(self, text: str):
-        self.text = text
+    def __init__(self):
         self.date_extractor = GetGLiNEREntitiesUseCase()
         self.entity_extractor = GetFlairEntitiesUseCase()
 
-    def get_entities(self) -> list[NamedEntity]:
+    def get_entities(self, text: str) -> list[NamedEntity]:
         entities = []
-        entities.extend(self.date_extractor.extract_dates(self.text))
-        entities.extend(self.entity_extractor.get_entities(self.text))
-        return sorted(entities, key=lambda x: x.start)
+        entities.extend(self.date_extractor.extract_dates(text))
+        entities.extend(self.entity_extractor.get_entities(text))
+        return sorted(entities, key=lambda x: x.character_start)

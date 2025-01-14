@@ -14,4 +14,4 @@ async def info():
 
 @app.get("/")
 async def get_named_entities(text: str):
-    return NamedEntitiesFromTextUseCase(text).get_entities()
+    return NamedEntitiesFromTextUseCase().get_entities(text)
