@@ -9,7 +9,6 @@ class NamedEntityGroup(BaseModel):
     type: NamedEntityType
     text: str
     named_entities: list[NamedEntity] = list()
-    context: str = "default"
 
     def is_same_type(self, named_entity: NamedEntity) -> bool:
         return self.type == named_entity.type
@@ -22,9 +21,7 @@ class NamedEntityGroup(BaseModel):
         entity_normalized_text = normalized_entity.normalized_text
 
         for each_normalized_text in [x.normalized_text for x in self.named_entities]:
-            if self.context == named_entity.context and self.equal_but_less_words(
-                entity_normalized_text, each_normalized_text
-            ):
+            if self.equal_but_less_words(entity_normalized_text, each_normalized_text):
                 return True
 
             if self.similar_text(each_normalized_text, entity_normalized_text):

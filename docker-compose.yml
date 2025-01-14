@@ -7,5 +7,23 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    networks:
+      - network-ner
     ports:
       - "5070:5070"
+
+  worker-pdf-layout-gpu:
+    container_name: "worker-pdf-layout-gpu"
+    entrypoint: [ "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--chdir", "./src", "app:app", "--bind", "0.0.0.0:5060", "--timeout", "10000" ]
+    image: ghcr.io/huridocs/pdf-document-layout-analysis:0.0.21
+    init: true
+    restart: unless-stopped
+    network_mode: host
+    networks:
+      - network-ner
+    ports:
+      - "5060:5060"
+
+networks:
+  network-ner:
+    driver: bridge
