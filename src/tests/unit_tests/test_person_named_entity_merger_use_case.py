@@ -5,7 +5,7 @@ from domain.NamedEntityType import NamedEntityType
 from use_cases.NamedEntityMergerUseCase import NamedEntityMergerUseCase
 
 
-class TestNamedEntityMergerUseCase(TestCase):
+class TestPersonNamedEntityMergerUseCase(TestCase):
     def test_merge_entities(self):
         name_entity_1 = NamedEntity(type=NamedEntityType.PERSON, text="María Diaz")
         name_entity_2 = NamedEntity(type=NamedEntityType.PERSON, text="María Diaz")
@@ -105,8 +105,8 @@ class TestNamedEntityMergerUseCase(TestCase):
         self.assertEqual("María Diaz Pe", named_entities_grouped[1].text)
 
     def test_merge_when_two_last_names_in_same_context(self):
-        named_entities = [NamedEntity(type=NamedEntityType.PERSON, text="María Diaz")]
-        named_entities += [NamedEntity(type=NamedEntityType.PERSON, text="Maria Díaz Pérez")]
+        named_entities = [NamedEntity(type=NamedEntityType.PERSON, text="María Diaz", context="context")]
+        named_entities += [NamedEntity(type=NamedEntityType.PERSON, text="Maria Díaz Pérez", context="context")]
 
         other_entity = [NamedEntity(type=NamedEntityType.PERSON, text="Other Name")]
         named_entities_grouped = NamedEntityMergerUseCase().merge(named_entities + other_entity)

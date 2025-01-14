@@ -18,7 +18,7 @@ class NamedEntityGroup(BaseModel):
         if self.text == named_entity.text:
             return True
 
-        normalized_entity = named_entity.normalize_text()
+        normalized_entity = named_entity.normalize_entity_text()
         entity_normalized_text = normalized_entity.normalized_text
 
         for each_normalized_text in [x.normalized_text for x in self.named_entities]:
@@ -99,4 +99,4 @@ class NamedEntityGroup(BaseModel):
         if len(named_entity.text) > len(self.text):
             self.text = named_entity.text
 
-        self.named_entities.append(named_entity.normalize_text())
+        self.named_entities.append(named_entity.normalize_entity_text())

@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from unidecode import unidecode
 
 from domain.NamedEntityType import NamedEntityType
+import country_converter as coco
 
 
 class NamedEntity(BaseModel):
@@ -12,11 +13,20 @@ class NamedEntity(BaseModel):
     end: int = 0
     context: str = "default"
 
-    def normalize_text(self):
+    @staticmethod
+    def normalize_text(text: str) -> str:
+        normalized_text = text.lower().strip()
+        normalized_text = normalized_text.replace(",", " ")
+        normalized_text = normalized_text.replace(".", " ")
+        normalized_text = " ".join(sorted(normalized_text.split()))
+        return unidecode(normalized_text)
+
+    def normalize_entity_text(self):
         if self.type == NamedEntityType.PERSON:
-            normalized_text = self.text.lower().strip()
-            normalized_text = normalized_text.replace(",", " ")
-            normalized_text = normalized_text.replace(".", " ")
-            normalized_text = " ".join(sorted(normalized_text.split()))
-            self.normalized_text = unidecode(normalized_text)
+            self.normalized_text = self.normalize_text(self.text)
+
+        if self.type == NamedEntityType.LOCATION:
+            iso_3 = coco.convert(names=[self.text], to="ISO3")
+            self.normalized_text = iso_3 if iso_3 != "not found" else self.normalize_text(self.text)
+
         return self
