@@ -1,3 +1,4 @@
+import json
 import sys
 import tempfile
 import uuid
@@ -34,7 +35,14 @@ async def get_named_entities(text: str = Form("")):
 
 
 @app.post("/pdf")
-async def get_pdf_named_entities(file: UploadFile = File(...)):
+async def get_pdf_named_entities(file: UploadFile = File(...), save_locally: bool = Form(False)):
     repository = PDFLayoutAnalysisRepository()
     pdf_path: Path = pdf_content_to_pdf_path(file.file.read())
-    return [entity for entity in NamedEntitiesFromPDFUseCase(repository).get_entities(pdf_path)]
+    entities = [entity for entity in NamedEntitiesFromPDFUseCase(repository).get_entities(pdf_path)]
+
+    if save_locally:
+        entities_json = [entity.model_dump() for entity in entities]
+        save_path: Path = Path("/app/data", pdf_path.name.replace(".pdf", ".json"))
+        save_path.write_text(json.dumps(entities_json, indent=2))
+
+    return entities

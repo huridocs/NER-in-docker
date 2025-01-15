@@ -26,8 +26,10 @@ remove_docker_images:
 start:
 ifeq ($(OS), Windows_NT)
 	if not exist models mkdir models
+	if not exist data mkdir data
 else
 	mkdir -p ./models
+	mkdir -p ./data
 endif
 ifeq ($(HAS_GPU), 1)
 	@echo "NVIDIA GPU detected, using docker-compose-gpu.yml"
@@ -38,6 +40,7 @@ else
 endif
 
 start_no_gpu:
+	mkdir -p ./data
 	mkdir -p ./models
 	docker compose up --build
 

@@ -3,6 +3,8 @@ services:
     extends:
       file: docker-compose.yml
       service: ner
+    volumes:
+      - ./data:/app/data
     deploy:
       resources:
         reservations:
@@ -10,3 +12,22 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+
+  worker-pdf-layout-gpu:
+    extends:
+      file: docker-compose.yml
+      service: worker-pdf-layout-gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+networks:
+  network-ner:
+    driver: bridge
+
+volumes:
+  data:
