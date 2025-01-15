@@ -1,3 +1,5 @@
+import pytest
+from os import getenv
 from pathlib import Path
 from unittest import TestCase
 from domain.BoundingBox import BoundingBox
@@ -29,6 +31,7 @@ class DummyPDFToSegmentsRepository(PDFToSegmentsRepository):
         ]
 
 
+@pytest.mark.skipif(getenv("CI") == "true", reason="Skip in CI environment as models are not downloaded locally")
 class TestNamedEntitiesFromPDFUseCase(TestCase):
 
     def test_get_entities(self):

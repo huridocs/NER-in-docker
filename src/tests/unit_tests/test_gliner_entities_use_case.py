@@ -1,10 +1,12 @@
+import pytest
+from os import getenv
 from unittest import TestCase
-
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
 from use_cases.GetGLiNEREntitiesUseCase import GetGLiNEREntitiesUseCase
 
 
+@pytest.mark.skipif(getenv("CI") == "true", reason="Skip in CI environment as models are not downloaded locally")
 class TestGLiNEREntitiesUseCase(TestCase):
     def test_datetime_normalized(self):
         window_entities: list[dict] = [{"start": 0, "end": 0, "text": "12 January 2024"}]

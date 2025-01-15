@@ -1,10 +1,12 @@
+import pytest
+from os import getenv
 from unittest import TestCase
-
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 
 
+@pytest.mark.skipif(getenv("CI") == "true", reason="Skip in CI environment as models are not downloaded locally")
 class TestNamedEntityMergerUseCase(TestCase):
     def test_get_entities(self):
         text = "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023"
