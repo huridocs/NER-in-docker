@@ -1,9 +1,11 @@
-from flair.nn import Classifier
+from pathlib import Path
+from flair.models import SequenceTagger
+from configuration import ROOT_PATH
 from domain.NamedEntity import NamedEntity
 from flair.data import Sentence, Span
 from domain.NamedEntityType import NamedEntityType
 
-flair_model = Classifier.load("ner-ontonotes-large")
+flair_model = SequenceTagger.load(Path(ROOT_PATH, "models", "flair", "pytorch_model.bin"))
 
 
 class GetFlairEntitiesUseCase:
