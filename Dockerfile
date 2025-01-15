@@ -15,8 +15,8 @@ RUN pip install --upgrade pip
 RUN pip --default-timeout=1000 install -r requirements.txt
 
 WORKDIR /app
-COPY ./src/. ./src
-COPY ./models/. ./models/
+COPY --chown=python:python ./src/. ./src
+COPY --chown=python:python ./models/. ./models/
 RUN python src/download_models.py
 
 ENV PYTHONPATH "${PYTHONPATH}:/app/src"
