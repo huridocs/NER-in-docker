@@ -72,6 +72,7 @@ class GetGLiNEREntitiesUseCase:
         return result
 
     def extract_dates(self, text: str):
+        self.entities = []
         words = text.split()
         self.iterate_through_windows(words)
         self.entities = [e for e in self.entities if search_dates(e.text)]
