@@ -73,6 +73,7 @@ free_up_space:
 
 start_detached:
 	mkdir -p ./models
+	mkdir -p ./data
 	docker compose up --build -d
 
 upgrade:
