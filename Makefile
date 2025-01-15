@@ -61,7 +61,11 @@ free_up_space:
 	sudo rm -rf /usr/share/dotnet
 	sudo rm -rf /usr/local/lib/android
 	sudo rm -rf /opt/hostedtoolcache/CodeQL
-	sudo docker image prune --all --force
+	sudo rm -rf /usr/local/share/chromium
+	sudo rm -rf /usr/local/share/powershell
+	sudo rm -rf /usr/share/swift
+	sudo rm -rf /usr/local/julia*
+	sudo docker system prune --all --force
 	df -h
 
 start_detached:
