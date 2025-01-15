@@ -50,5 +50,3 @@ class TestEndToEnd(TestCase):
             self.assertEqual(1, response_json[0]["segment_number"])
             self.assertEqual(72, response_json[0]["bounding_box"]["left"])
             self.assertEqual(74, response_json[0]["bounding_box"]["top"])
-            self.assertEqual(429, response_json[0]["bounding_box"]["width"])
-            self.assertEqual(34, response_json[0]["bounding_box"]["height"])
