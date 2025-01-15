@@ -1,7 +1,7 @@
+from pathlib import Path
 from unittest import TestCase
-
 import requests
-
+from configuration import ROOT_PATH
 from domain.NamedEntity import NamedEntity
 
 
@@ -28,3 +28,27 @@ class TestEndToEnd(TestCase):
         self.assertEqual("2025-06-12", entity_2.normalized_text)
         self.assertEqual(52, entity_2.character_start)
         self.assertEqual(64, entity_2.character_end)
+
+    def test_pdf_extraction(self):
+        pdf_path: Path = Path(ROOT_PATH, "src", "tests", "end_to_end", "test_pdfs", "test_document.pdf")
+        with open(pdf_path, "rb") as pdf_file:
+            files = {"file": pdf_file}
+            response = requests.post(f"{self.service_url}/pdf", files=files)
+            response_json = response.json()
+            self.assertEqual(200, response.status_code)
+            self.assertEqual(10, len(response_json))
+            self.assertEqual("PERSON", response_json[0]["type"])
+            self.assertEqual("Maria Rodriguez", response_json[0]["text"])
+            self.assertEqual("Maria Rodriguez", response_json[0]["normalized_text"])
+            self.assertEqual(0, response_json[0]["character_start"])
+            self.assertEqual(15, response_json[0]["character_end"])
+            expected_segment_text: str = (
+                "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023."
+            )
+            self.assertEqual(expected_segment_text, response_json[0]["segment_text"])
+            self.assertEqual(1, response_json[0]["page_number"])
+            self.assertEqual(1, response_json[0]["segment_number"])
+            self.assertEqual(72, response_json[0]["bounding_box"]["left"])
+            self.assertEqual(74, response_json[0]["bounding_box"]["top"])
+            self.assertEqual(429, response_json[0]["bounding_box"]["width"])
+            self.assertEqual(34, response_json[0]["bounding_box"]["height"])
