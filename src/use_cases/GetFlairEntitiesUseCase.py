@@ -1,11 +1,11 @@
 from pathlib import Path
-from flair.models import SequenceTagger
-from configuration import ROOT_PATH
+from flair.nn import Classifier
+from configuration import MODELS_PATH
 from domain.NamedEntity import NamedEntity
 from flair.data import Sentence, Span
 from domain.NamedEntityType import NamedEntityType
 
-flair_model = SequenceTagger.load(Path(ROOT_PATH, "models", "flair", "pytorch_model.bin"))
+flair_model = Classifier.load(Path(MODELS_PATH, "flair", "pytorch_model.bin"))
 
 
 class GetFlairEntitiesUseCase:
