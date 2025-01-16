@@ -11,7 +11,7 @@ class NamedEntityMergerUseCase:
             if named_entity_group.belongs_to_group(named_entity):
                 return named_entity_group
 
-        return NamedEntityGroup(type=named_entity.type, text=named_entity.text)
+        return NamedEntityGroup(type=named_entity.type, name=named_entity.text)
 
     def merge(self, named_entities: list[NamedEntity]) -> list[NamedEntityGroup]:
         for named_entity in named_entities:

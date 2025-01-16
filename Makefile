@@ -78,6 +78,3 @@ start_detached:
 
 upgrade:
 	. .venv/bin/activate; pip-upgrade
-
-download_models:
-	. .venv/bin/activate; python src/download_models.py

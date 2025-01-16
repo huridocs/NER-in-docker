@@ -7,14 +7,14 @@ from rapidfuzz import fuzz
 
 class NamedEntityGroup(BaseModel):
     type: NamedEntityType
-    text: str
+    name: str
     named_entities: list[NamedEntity] = list()
 
     def is_same_type(self, named_entity: NamedEntity) -> bool:
         return self.type == named_entity.type
 
     def is_exact_match(self, named_entity: NamedEntity) -> bool:
-        return self.text == named_entity.text
+        return self.name == named_entity.normalized_text
 
     def is_similar_entity(self, named_entity: NamedEntity) -> bool:
         normalized_entity = named_entity.normalize_entity_text()
@@ -103,11 +103,11 @@ class NamedEntityGroup(BaseModel):
 
     def add_named_entity(self, named_entity: NamedEntity):
         if self.type == NamedEntityType.DATE and named_entity.normalized_text:
-            self.text = named_entity.normalized_text
+            self.name = named_entity.normalized_text
             self.named_entities.append(named_entity.normalize_entity_text())
             return
 
-        if len(named_entity.text) > len(self.text):
-            self.text = named_entity.text
+        if len(named_entity.text) > len(self.name):
+            self.name = named_entity.text
 
         self.named_entities.append(named_entity.normalize_entity_text())

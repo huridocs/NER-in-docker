@@ -13,10 +13,10 @@ services:
               count: 1
               capabilities: [ gpu ]
 
-  worker-pdf-layout-gpu:
+  pdf-layout-analysis-gpu:
     extends:
       file: docker-compose.yml
-      service: worker-pdf-layout-gpu
+      service: pdf-layout-analysis
     deploy:
       resources:
         reservations:

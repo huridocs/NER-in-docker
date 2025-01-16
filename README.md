@@ -13,7 +13,6 @@ Run the service:
   
       make start
 
-
 - Without GPU support:
 
       make start_no_gpu

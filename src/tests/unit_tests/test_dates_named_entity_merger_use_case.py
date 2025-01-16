@@ -16,13 +16,13 @@ class TestDatesNamedEntityMergerUseCase(TestCase):
 
         self.assertEqual(2, len(locations_grouped))
 
-        self.assertEqual("2023-05-12", locations_grouped[0].text)
+        self.assertEqual("2023-05-12", locations_grouped[0].name)
         self.assertEqual(NamedEntityType.DATE, locations_grouped[0].type)
         self.assertEqual(2, len(locations_grouped[0].named_entities))
         self.assertEqual("12 May 2023", locations_grouped[0].named_entities[0].text)
         self.assertEqual("twelve may 2023", locations_grouped[0].named_entities[1].text)
 
-        self.assertEqual("2022-04-11", locations_grouped[1].text)
+        self.assertEqual("2022-04-11", locations_grouped[1].name)
         self.assertEqual(NamedEntityType.DATE, locations_grouped[1].type)
         self.assertEqual(2, len(locations_grouped[1].named_entities))
         self.assertEqual("11 4 2022", locations_grouped[1].named_entities[0].text)

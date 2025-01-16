@@ -19,7 +19,7 @@ class TestLocationNamedEntityMergerUseCase(TestCase):
 
         self.assertEqual(2, len(locations_grouped))
 
-        self.assertEqual("Türkiye", locations_grouped[0].text)
+        self.assertEqual("Türkiye", locations_grouped[0].name)
         self.assertEqual(NamedEntityType.LOCATION, locations_grouped[0].type)
         self.assertEqual(4, len(locations_grouped[0].named_entities))
         self.assertEqual("Turkey", locations_grouped[0].named_entities[0].text)
@@ -27,7 +27,7 @@ class TestLocationNamedEntityMergerUseCase(TestCase):
         self.assertEqual("TR", locations_grouped[0].named_entities[2].text)
         self.assertEqual("TUR", locations_grouped[0].named_entities[3].text)
 
-        self.assertEqual("Spain", locations_grouped[1].text)
+        self.assertEqual("Spain", locations_grouped[1].name)
         self.assertEqual(NamedEntityType.LOCATION, locations_grouped[1].type)
         self.assertEqual(3, len(locations_grouped[1].named_entities))
         self.assertEqual("ESP", locations_grouped[1].named_entities[0].text)
@@ -44,10 +44,10 @@ class TestLocationNamedEntityMergerUseCase(TestCase):
 
         self.assertEqual(2, len(locations_grouped))
 
-        self.assertEqual("Paris", locations_grouped[0].text)
+        self.assertEqual("Paris", locations_grouped[0].name)
         self.assertEqual(NamedEntityType.LOCATION, locations_grouped[0].type)
         self.assertEqual(2, len(locations_grouped[0].named_entities))
 
-        self.assertEqual("Mérida", locations_grouped[1].text)
+        self.assertEqual("Mérida", locations_grouped[1].name)
         self.assertEqual(NamedEntityType.LOCATION, locations_grouped[1].type)
         self.assertEqual(2, len(locations_grouped[1].named_entities))

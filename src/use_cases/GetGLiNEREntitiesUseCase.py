@@ -5,7 +5,8 @@ from configuration import MODELS_PATH
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
 
-classifier = GLiNER.from_pretrained(Path(MODELS_PATH, "gliner"))
+gliner_path = Path(MODELS_PATH, "gliner")
+classifier = GLiNER.from_pretrained(gliner_path) if gliner_path.exists() else None
 
 
 class GetGLiNEREntitiesUseCase:
@@ -14,7 +15,7 @@ class GetGLiNEREntitiesUseCase:
     SLIDE_SIZE = 10
 
     def __init__(self):
-        self.entities: list[NamedEntity] = []
+        self.entities: list[NamedEntity] = list()
 
     @staticmethod
     def remove_overlapping_entities(entities: list[NamedEntity]):
@@ -72,7 +73,7 @@ class GetGLiNEREntitiesUseCase:
         return result
 
     def extract_dates(self, text: str):
-        self.entities = []
+        self.entities: list[NamedEntity] = list()
         words = text.split()
         self.iterate_through_windows(words)
         self.entities = [e for e in self.entities if search_dates(e.text)]
