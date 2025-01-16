@@ -36,9 +36,9 @@ async def get_named_entities(text: str = Form("")):
 
 @app.post("/pdf")
 async def get_pdf_named_entities(file: UploadFile = File(...), save_locally: bool = Form(False)):
-    repository = PDFLayoutAnalysisRepository()
+    pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
     pdf_path: Path = pdf_content_to_pdf_path(file.file.read())
-    entities = [entity for entity in NamedEntitiesFromPDFUseCase(repository).get_entities(pdf_path)]
+    entities = [entity for entity in NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository).get_entities(pdf_path)]
 
     if save_locally:
         entities_json = [entity.model_dump() for entity in entities]

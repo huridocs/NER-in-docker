@@ -30,6 +30,9 @@ jobs:
     - name: Lint with black
       run: make check_format
 
+    - name: Download models
+      run: python src/download_models.py
+
     - name: Start service
       run: make start_detached
 

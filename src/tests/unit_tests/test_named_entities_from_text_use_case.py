@@ -3,19 +3,14 @@ from os import getenv
 from unittest import TestCase
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
+from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 
 
 @pytest.mark.skipif(getenv("GITHUB_ACTIONS") == "true", reason="Skip in CI environment as models are not downloaded locally")
 class TestNamedEntityMergerUseCase(TestCase):
-
-    def setUp(self):
-        from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
-
-        self.use_case = NamedEntitiesFromTextUseCase()
-
     def test_get_entities(self):
         text = "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023"
-        entities: list[NamedEntity] = self.use_case.get_entities(text)
+        entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
 
         self.assertEqual(5, len(entities))
         self.assertEqual("Maria Rodriguez", entities[0].text)
@@ -50,7 +45,7 @@ class TestNamedEntityMergerUseCase(TestCase):
 
     def test_get_entities_of_type_organization(self):
         text = "I work for HURIDOCS organization."
-        entities: list[NamedEntity] = self.use_case.get_entities(text)
+        entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
 
         self.assertEqual(1, len(entities))
         self.assertEqual("HURIDOCS", entities[0].text)
@@ -61,7 +56,7 @@ class TestNamedEntityMergerUseCase(TestCase):
 
     def test_get_entities_of_type_law(self):
         text = "The Senate passed Resolution No. 122, establishing a set of rules for the impeachment trial."
-        entities: list[NamedEntity] = self.use_case.get_entities(text)
+        entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
 
         self.assertEqual(2, len(entities))
         self.assertEqual("Resolution No. 122", entities[1].text)

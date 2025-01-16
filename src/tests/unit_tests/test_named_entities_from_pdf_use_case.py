@@ -1,5 +1,3 @@
-import pytest
-from os import getenv
 from pathlib import Path
 from unittest import TestCase
 from domain.BoundingBox import BoundingBox
@@ -7,6 +5,7 @@ from domain.NamedEntityType import NamedEntityType
 from domain.PDFNamedEntity import PDFNamedEntity
 from domain.PDFSegment import PDFSegment
 from ports.PDFToSegmentsRepository import PDFToSegmentsRepository
+from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
 
 
 class DummyPDFToSegmentsRepository(PDFToSegmentsRepository):
@@ -30,17 +29,11 @@ class DummyPDFToSegmentsRepository(PDFToSegmentsRepository):
         ]
 
 
-@pytest.mark.skipif(getenv("GITHUB_ACTIONS") == "true", reason="Skip in CI environment as models are not downloaded locally")
 class TestNamedEntitiesFromPDFUseCase(TestCase):
-    def setUp(self):
-        from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
-
-        dummy_pdf_to_segment_repository = DummyPDFToSegmentsRepository()
-        self.use_case = NamedEntitiesFromPDFUseCase(dummy_pdf_to_segment_repository)
-
     def test_get_entities(self):
         pdf_path: Path = Path("../end_to_end/test_pdfs/test_document.pdf")
-        entities: list[PDFNamedEntity] = self.use_case.get_entities(pdf_path)
+        dummy_pdf_to_segment_repository = DummyPDFToSegmentsRepository()
+        entities: list[PDFNamedEntity] = NamedEntitiesFromPDFUseCase(dummy_pdf_to_segment_repository).get_entities(pdf_path)
 
         self.assertEqual(3, len(entities))
         self.assertEqual("Maria Rodriguez", entities[0].text)
