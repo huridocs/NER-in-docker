@@ -31,7 +31,7 @@ jobs:
       run: make check_format
 
     - name: Download models
-      run: python src/download_models.py
+      run: make download_models
 
     - name: Start service
       run: make start_detached
