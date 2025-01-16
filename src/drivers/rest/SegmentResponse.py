@@ -4,6 +4,9 @@ from domain.BoundingBox import BoundingBox
 
 
 class SegmentResponse(BaseModel):
-    segment_text: str = ""
-    segment_number: int = 1
-    bounding_box: BoundingBox = None
+    text: str
+    page_number: int
+    segment_number: int
+    character_start: int
+    character_end: int
+    bounding_box: BoundingBox
