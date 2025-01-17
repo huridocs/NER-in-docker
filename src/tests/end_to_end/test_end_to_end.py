@@ -1,8 +1,8 @@
-from pathlib import Path
 from unittest import TestCase
 import requests
-from configuration import ROOT_PATH
-from domain.NamedEntity import NamedEntity
+
+from drivers.rest.GroupResponse import GroupResponse
+from drivers.rest.NamedEntityResponse import NamedEntityResponse
 
 
 class TestEndToEnd(TestCase):
@@ -10,46 +10,87 @@ class TestEndToEnd(TestCase):
 
     def test_text_extraction(self):
         text = "The International Space Station past above Tokyo on 12 June 2025. "
-        text += "Maria Rodriguez was in the Senate when Resolution No. 122 passed."
+        text += "Maria Rodriguez was in the Senate when Resolution No. 122 passed on twelve of June 2025."
 
         data = {"text": text}
         result = requests.post(f"{self.service_url}", data=data)
 
-        entities_dict = result.json()
+        entities_dict = result.json()["entities"]
+        groups_dict = result.json()["groups"]
 
         self.assertEqual(200, result.status_code)
 
-        self.assertEqual(5, len(entities_dict))
+        self.assertEqual(6, len(entities_dict))
 
-        self.assertEqual("Tokyo", NamedEntity(**entities_dict[0]).text)
-        self.assertEqual("LOCATION", NamedEntity(**entities_dict[0]).type)
-        self.assertEqual("Tokyo", NamedEntity(**entities_dict[0]).normalized_text)
-        self.assertEqual(43, NamedEntity(**entities_dict[0]).character_start)
-        self.assertEqual(48, NamedEntity(**entities_dict[0]).character_end)
+        self.assertEqual("Tokyo", NamedEntityResponse(**entities_dict[0]).text)
+        self.assertEqual("LOCATION", NamedEntityResponse(**entities_dict[0]).type)
+        self.assertEqual("Tokyo", NamedEntityResponse(**entities_dict[0]).group_name)
+        self.assertEqual(43, NamedEntityResponse(**entities_dict[0]).character_start)
+        self.assertEqual(48, NamedEntityResponse(**entities_dict[0]).character_end)
 
-        self.assertEqual("12 June 2025", NamedEntity(**entities_dict[1]).text)
-        self.assertEqual("DATE", NamedEntity(**entities_dict[1]).type)
-        self.assertEqual("2025-06-12", NamedEntity(**entities_dict[1]).normalized_text)
-        self.assertEqual(52, NamedEntity(**entities_dict[1]).character_start)
-        self.assertEqual(64, NamedEntity(**entities_dict[1]).character_end)
+        self.assertEqual("12 June 2025", NamedEntityResponse(**entities_dict[1]).text)
+        self.assertEqual("DATE", NamedEntityResponse(**entities_dict[1]).type)
+        self.assertEqual("2025-06-12", NamedEntityResponse(**entities_dict[1]).group_name)
+        self.assertEqual(52, NamedEntityResponse(**entities_dict[1]).character_start)
+        self.assertEqual(64, NamedEntityResponse(**entities_dict[1]).character_end)
 
-        self.assertEqual("Maria Rodriguez", NamedEntity(**entities_dict[2]).text)
-        self.assertEqual("PERSON", NamedEntity(**entities_dict[2]).type)
-        self.assertEqual("Maria Rodriguez", NamedEntity(**entities_dict[2]).normalized_text)
-        self.assertEqual(66, NamedEntity(**entities_dict[2]).character_start)
-        self.assertEqual(81, NamedEntity(**entities_dict[2]).character_end)
+        self.assertEqual("Maria Rodriguez", NamedEntityResponse(**entities_dict[2]).text)
+        self.assertEqual("PERSON", NamedEntityResponse(**entities_dict[2]).type)
+        self.assertEqual("Maria Rodriguez", NamedEntityResponse(**entities_dict[2]).group_name)
+        self.assertEqual(66, NamedEntityResponse(**entities_dict[2]).character_start)
+        self.assertEqual(81, NamedEntityResponse(**entities_dict[2]).character_end)
 
-        self.assertEqual("Senate", NamedEntity(**entities_dict[3]).text)
-        self.assertEqual("Senate", NamedEntity(**entities_dict[3]).normalized_text)
-        self.assertEqual("ORGANIZATION", NamedEntity(**entities_dict[3]).type)
-        self.assertEqual(93, NamedEntity(**entities_dict[3]).character_start)
-        self.assertEqual(99, NamedEntity(**entities_dict[3]).character_end)
+        self.assertEqual("Senate", NamedEntityResponse(**entities_dict[3]).text)
+        self.assertEqual("Senate", NamedEntityResponse(**entities_dict[3]).group_name)
+        self.assertEqual("ORGANIZATION", NamedEntityResponse(**entities_dict[3]).type)
+        self.assertEqual(93, NamedEntityResponse(**entities_dict[3]).character_start)
+        self.assertEqual(99, NamedEntityResponse(**entities_dict[3]).character_end)
 
-        self.assertEqual("Resolution No. 122", NamedEntity(**entities_dict[4]).text)
-        self.assertEqual("Resolution No. 122", NamedEntity(**entities_dict[4]).normalized_text)
-        self.assertEqual("LAW", NamedEntity(**entities_dict[4]).type)
-        self.assertEqual(105, NamedEntity(**entities_dict[4]).character_start)
-        self.assertEqual(123, NamedEntity(**entities_dict[4]).character_end)
+        self.assertEqual("Resolution No. 122", NamedEntityResponse(**entities_dict[4]).text)
+        self.assertEqual("Resolution No. 122", NamedEntityResponse(**entities_dict[4]).group_name)
+        self.assertEqual("LAW", NamedEntityResponse(**entities_dict[4]).type)
+        self.assertEqual(105, NamedEntityResponse(**entities_dict[4]).character_start)
+        self.assertEqual(123, NamedEntityResponse(**entities_dict[4]).character_end)
+
+        self.assertEqual("twelve of June 2025", NamedEntityResponse(**entities_dict[5]).text)
+        self.assertEqual("DATE", NamedEntityResponse(**entities_dict[5]).type)
+        self.assertEqual("2025-06-12", NamedEntityResponse(**entities_dict[5]).group_name)
+
+        self.assertEqual(5, len(groups_dict))
+
+        self.assertEqual("Tokyo", GroupResponse(**groups_dict[0]).group_name)
+        self.assertEqual(1, len(GroupResponse(**groups_dict[0]).entities_ids))
+        self.assertEqual(1, len(GroupResponse(**groups_dict[0]).entities_text))
+        self.assertEqual("Tokyo", GroupResponse(**groups_dict[0]).entities_text[0])
+        self.assertEqual(0, GroupResponse(**groups_dict[0]).entities_ids[0])
+
+        self.assertEqual("2025-06-12", GroupResponse(**groups_dict[1]).group_name)
+        self.assertEqual(2, len(GroupResponse(**groups_dict[1]).entities_ids))
+        self.assertEqual(2, len(GroupResponse(**groups_dict[1]).entities_text))
+        self.assertEqual("12 June 2025", GroupResponse(**groups_dict[1]).entities_text[0])
+        self.assertEqual(1, GroupResponse(**groups_dict[1]).entities_ids[0])
+        self.assertEqual("twelve of June 2025", GroupResponse(**groups_dict[1]).entities_text[1])
+        self.assertEqual(5, GroupResponse(**groups_dict[1]).entities_ids[1])
+
+        self.assertEqual("Maria Rodriguez", GroupResponse(**groups_dict[2]).group_name)
+        self.assertEqual(1, len(GroupResponse(**groups_dict[2]).entities_ids))
+        self.assertEqual(1, len(GroupResponse(**groups_dict[2]).entities_text))
+        self.assertEqual("Maria Rodriguez", GroupResponse(**groups_dict[2]).entities_text[0])
+        self.assertEqual(2, GroupResponse(**groups_dict[2]).entities_ids[0])
+
+        self.assertEqual("Senate", GroupResponse(**groups_dict[3]).group_name)
+        self.assertEqual(1, len(GroupResponse(**groups_dict[3]).entities_ids))
+        self.assertEqual(1, len(GroupResponse(**groups_dict[3]).entities_text))
+        self.assertEqual("Senate", GroupResponse(**groups_dict[3]).entities_text[0])
+        self.assertEqual(3, GroupResponse(**groups_dict[3]).entities_ids[0])
+
+        self.assertEqual("Resolution No. 122", GroupResponse(**groups_dict[4]).group_name)
+        self.assertEqual(1, len(GroupResponse(**groups_dict[4]).entities_ids))
+        self.assertEqual(1, len(GroupResponse(**groups_dict[4]).entities_text))
+        self.assertEqual("Resolution No. 122", GroupResponse(**groups_dict[4]).entities_text[0])
+        self.assertEqual(4, GroupResponse(**groups_dict[4]).entities_ids[0])
+
+
 
     def test_text_extraction_for_dates(self):
         text = "Today is 13th January 2024. It should be Wednesday"
@@ -57,7 +98,7 @@ class TestEndToEnd(TestCase):
         result = requests.post(f"{self.service_url}", data=data)
 
         entities_dict = result.json()
-        entity = NamedEntity(**entities_dict[0])
+        entity = NamedEntityResponse(**entities_dict[0])
 
         self.assertEqual(200, result.status_code)
 
@@ -65,7 +106,7 @@ class TestEndToEnd(TestCase):
 
         self.assertEqual("13th January 2024", entity.text)
         self.assertEqual("DATE", entity.type)
-        self.assertEqual("2024-01-13", entity.normalized_text)
+        self.assertEqual("2024-01-13", entity.group_name)
         self.assertEqual(9, entity.character_start)
         self.assertEqual(26, entity.character_end)
 

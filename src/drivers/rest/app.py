@@ -1,12 +1,18 @@
-import json
 import sys
 import tempfile
 import uuid
 from pathlib import Path
 from fastapi import FastAPI, Form, UploadFile, File
 from adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
+from domain.NamedEntity import NamedEntity
+from domain.NamedEntityGroup import NamedEntityGroup
+from drivers.rest.GroupResponse import GroupResponse
+from drivers.rest.NamedEntitiesResponse import NamedEntitiesResponse
+from drivers.rest.NamedEntityResponse import NamedEntityResponse
+from drivers.rest.PDFNamedEntityResponse import PDFNamedEntityResponse
 from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
+from use_cases.NamedEntityMergerUseCase import NamedEntityMergerUseCase
 
 
 def get_file_path(file_name, extension) -> Path:
@@ -30,19 +36,28 @@ async def info():
 
 @app.post("/")
 async def get_named_entities(text: str = Form("")):
-    entities = NamedEntitiesFromTextUseCase().get_entities(text)
-    return entities
+    entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
+    named_entity_groups: list[NamedEntityGroup] = NamedEntityMergerUseCase().merge(entities)
+    named_entity_responses = [
+        NamedEntityResponse.from_named_entity(entity, group.name)
+        for group in named_entity_groups
+        for entity in group.named_entities
+    ]
+    named_entity_responses.sort(key=lambda x: x.character_start)
+    return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)
 
 
 @app.post("/pdf")
-async def get_pdf_named_entities(file: UploadFile = File(...), save_locally: bool = Form(False)):
-    pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
+async def get_pdf_named_entities(file: UploadFile = File(...)):
     pdf_path: Path = pdf_content_to_pdf_path(file.file.read())
+    pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
     entities = [entity for entity in NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository).get_entities(pdf_path)]
-
-    if save_locally:
-        entities_json = [entity.model_dump() for entity in entities]
-        save_path: Path = Path("/app/data", pdf_path.name.replace(".pdf", ".json"))
-        save_path.write_text(json.dumps(entities_json, indent=2))
-
-    return entities
+    named_entity_groups: list[NamedEntityGroup] = NamedEntityMergerUseCase().merge(entities)
+    pdf_named_entity_responses = [
+        PDFNamedEntityResponse.from_pdf_named_entity(entity, group.name)
+        for entity in entities
+        for group in named_entity_groups
+        if group.belongs_to_group(entity)
+    ]
+    group_responses = [GroupResponse.from_group(group) for group in named_entity_groups]
+    return NamedEntitiesResponse(entities=pdf_named_entity_responses, groups=group_responses)
