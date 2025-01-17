@@ -6,9 +6,8 @@ from fastapi import FastAPI, Form, UploadFile, File
 from adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityGroup import NamedEntityGroup
-from drivers.rest.GroupResponse import GroupResponse
 from drivers.rest.NamedEntitiesResponse import NamedEntitiesResponse
-from drivers.rest.PDFNamedEntityResponse import PDFNamedEntityResponse
+from drivers.rest.PDFNamedEntitiesResponse import PDFNamedEntitiesResponse
 from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 from use_cases.NamedEntityMergerUseCase import NamedEntityMergerUseCase
@@ -46,11 +45,4 @@ async def get_pdf_named_entities(file: UploadFile = File(...)):
     pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
     entities = [entity for entity in NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository).get_entities(pdf_path)]
     named_entity_groups: list[NamedEntityGroup] = NamedEntityMergerUseCase().merge(entities)
-    pdf_named_entity_responses = [
-        PDFNamedEntityResponse.from_pdf_named_entity(entity, group.name)
-        for entity in entities
-        for group in named_entity_groups
-        if group.belongs_to_group(entity)
-    ]
-    group_responses = [GroupResponse.from_group(group) for group in named_entity_groups]
-    return NamedEntitiesResponse(entities=pdf_named_entity_responses, groups=group_responses)
+    return PDFNamedEntitiesResponse.from_named_entity_groups(named_entity_groups)

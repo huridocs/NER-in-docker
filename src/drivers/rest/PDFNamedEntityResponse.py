@@ -13,6 +13,8 @@ class PDFNamedEntityResponse(NamedEntityResponse):
             group_name=group_name,
             type=pdf_named_entity.type,
             text=pdf_named_entity.text,
+            character_start=pdf_named_entity.character_start,
+            character_end=pdf_named_entity.character_end,
             page_number=pdf_named_entity.segment.page_number,
             segment=SegmentResponse.from_pdf_named_entity(pdf_named_entity),
         )
