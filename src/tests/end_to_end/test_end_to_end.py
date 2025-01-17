@@ -1,8 +1,11 @@
+from pathlib import Path
 from unittest import TestCase
 import requests
 
+from configuration import ROOT_PATH
 from drivers.rest.GroupResponse import GroupResponse
 from drivers.rest.NamedEntityResponse import NamedEntityResponse
+from drivers.rest.PDFNamedEntityResponse import PDFNamedEntityResponse
 
 
 class TestEndToEnd(TestCase):
@@ -59,12 +62,14 @@ class TestEndToEnd(TestCase):
         self.assertEqual(5, len(groups_dict))
 
         self.assertEqual("Tokyo", GroupResponse(**groups_dict[0]).group_name)
+        self.assertEqual("LOCATION", GroupResponse(**groups_dict[0]).type)
         self.assertEqual(1, len(GroupResponse(**groups_dict[0]).entities_ids))
         self.assertEqual(1, len(GroupResponse(**groups_dict[0]).entities_text))
         self.assertEqual("Tokyo", GroupResponse(**groups_dict[0]).entities_text[0])
         self.assertEqual(0, GroupResponse(**groups_dict[0]).entities_ids[0])
 
         self.assertEqual("2025-06-12", GroupResponse(**groups_dict[1]).group_name)
+        self.assertEqual("DATE", GroupResponse(**groups_dict[1]).type)
         self.assertEqual(2, len(GroupResponse(**groups_dict[1]).entities_ids))
         self.assertEqual(2, len(GroupResponse(**groups_dict[1]).entities_text))
         self.assertEqual("12 June 2025", GroupResponse(**groups_dict[1]).entities_text[0])
@@ -73,18 +78,21 @@ class TestEndToEnd(TestCase):
         self.assertEqual(5, GroupResponse(**groups_dict[1]).entities_ids[1])
 
         self.assertEqual("Maria Rodriguez", GroupResponse(**groups_dict[2]).group_name)
+        self.assertEqual("PERSON", GroupResponse(**groups_dict[2]).type)
         self.assertEqual(1, len(GroupResponse(**groups_dict[2]).entities_ids))
         self.assertEqual(1, len(GroupResponse(**groups_dict[2]).entities_text))
         self.assertEqual("Maria Rodriguez", GroupResponse(**groups_dict[2]).entities_text[0])
         self.assertEqual(2, GroupResponse(**groups_dict[2]).entities_ids[0])
 
         self.assertEqual("Senate", GroupResponse(**groups_dict[3]).group_name)
+        self.assertEqual("ORGANIZATION", GroupResponse(**groups_dict[3]).type)
         self.assertEqual(1, len(GroupResponse(**groups_dict[3]).entities_ids))
         self.assertEqual(1, len(GroupResponse(**groups_dict[3]).entities_text))
         self.assertEqual("Senate", GroupResponse(**groups_dict[3]).entities_text[0])
         self.assertEqual(3, GroupResponse(**groups_dict[3]).entities_ids[0])
 
         self.assertEqual("Resolution No. 122", GroupResponse(**groups_dict[4]).group_name)
+        self.assertEqual("LAW", GroupResponse(**groups_dict[4]).type)
         self.assertEqual(1, len(GroupResponse(**groups_dict[4]).entities_ids))
         self.assertEqual(1, len(GroupResponse(**groups_dict[4]).entities_text))
         self.assertEqual("Resolution No. 122", GroupResponse(**groups_dict[4]).entities_text[0])
@@ -130,6 +138,7 @@ class TestEndToEnd(TestCase):
         self.assertEqual(2, len(groups_dict))
 
         self.assertEqual("2024-01-13", group_1.group_name)
+        self.assertEqual("DATE", group_1.type)
         self.assertEqual(2, len(group_1.entities_ids))
         self.assertEqual(2, len(group_1.entities_text))
         self.assertEqual("13th of January 2024", group_1.entities_text[0])
@@ -138,29 +147,70 @@ class TestEndToEnd(TestCase):
         self.assertEqual(2, group_1.entities_ids[1])
 
         self.assertEqual("13th of February", group_2.group_name)
+        self.assertEqual("DATE", group_2.type)
         self.assertEqual(1, len(group_2.entities_ids))
         self.assertEqual(1, len(group_2.entities_text))
         self.assertEqual("13th of February", group_2.entities_text[0])
         self.assertEqual(1, group_2.entities_ids[0])
 
-    # def test_pdf_extraction(self):
-    #     pdf_path: Path = Path(ROOT_PATH, "src", "tests", "end_to_end", "test_pdfs", "test_document.pdf")
-    #     with open(pdf_path, "rb") as pdf_file:
-    #         files = {"file": pdf_file}
-    #         response = requests.post(f"{self.service_url}/pdf", files=files)
-    #         response_json = response.json()
-    #         self.assertEqual(200, response.status_code)
-    #         self.assertEqual(10, len(response_json))
-    #         self.assertEqual("PERSON", response_json[0]["type"])
-    #         self.assertEqual("Maria Rodriguez", response_json[0]["text"])
-    #         self.assertEqual("Maria Rodriguez", response_json[0]["normalized_text"])
-    #         self.assertEqual(0, response_json[0]["character_start"])
-    #         self.assertEqual(15, response_json[0]["character_end"])
-    #         expected_segment_text: str = (
-    #             "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023."
-    #         )
-    #         self.assertEqual(expected_segment_text, response_json[0]["segment_text"])
-    #         self.assertEqual(1, response_json[0]["page_number"])
-    #         self.assertEqual(1, response_json[0]["segment_number"])
-    #         self.assertEqual(72, response_json[0]["bounding_box"]["left"])
-    #         self.assertEqual(74, response_json[0]["bounding_box"]["top"])
+    def test_pdf_extraction(self):
+        pdf_path: Path = Path(ROOT_PATH, "src", "tests", "end_to_end", "test_pdfs", "test_document.pdf")
+        with open(pdf_path, "rb") as pdf_file:
+            files = {"file": pdf_file}
+            response = requests.post(f"{self.service_url}/pdf", files=files)
+
+        entities_dict = response.json()["entities"]
+        groups_dict = response.json()["groups"]
+
+        entity_0 = PDFNamedEntityResponse(**entities_dict[0])
+        entity_9 = PDFNamedEntityResponse(**entities_dict[9])
+        group_0 = GroupResponse(**groups_dict[0])
+        group_7 = GroupResponse(**groups_dict[7])
+
+        self.assertEqual(200, response.status_code)
+
+        self.assertEqual(10, len(entities_dict))
+
+        self.assertEqual("Maria Diaz Rodriguez", entity_0.group_name)
+        self.assertEqual("PERSON", entity_0.type)
+        self.assertEqual("Maria Rodriguez", entity_0.text)
+        segment_text: str = "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023."
+        self.assertEqual(segment_text, entity_0.segment.text)
+        self.assertEqual(1, entity_0.segment.page_number)
+        self.assertEqual(1, entity_0.segment.segment_number)
+        self.assertEqual(0, entity_0.segment.character_start)
+        self.assertEqual(15, entity_0.segment.character_end)
+        self.assertEqual(72, entity_0.segment.bounding_box.left)
+        self.assertEqual(74, entity_0.segment.bounding_box.top)
+        self.assertEqual(430, entity_0.segment.bounding_box.width)
+        self.assertEqual(34, entity_0.segment.bounding_box.height)
+
+        self.assertEqual("Resolution No. 122", entity_9.text)
+        self.assertEqual("LAW", entity_9.type)
+        self.assertEqual("Resolution No. 122", entity_9.group_name)
+        segment_text: str = "The Senate passed Resolution No. 122, establishing a set of rules for the impeachment trial."
+        self.assertEqual(segment_text, entity_9.segment.text)
+        self.assertEqual(1, entity_9.segment.page_number)
+        self.assertEqual(5, entity_9.segment.segment_number)
+        self.assertEqual(18, entity_9.segment.character_start)
+        self.assertEqual(36, entity_9.segment.character_end)
+        self.assertEqual(72, entity_9.segment.bounding_box.left)
+        self.assertEqual(351, entity_9.segment.bounding_box.top)
+        self.assertEqual(440, entity_9.segment.bounding_box.width)
+        self.assertEqual(35, entity_9.segment.bounding_box.height)
+
+        self.assertEqual(8, len(groups_dict))
+
+        self.assertEqual("Maria Diaz Rodriguez", group_0.group_name)
+        self.assertEqual("PERSON", group_0.type)
+        self.assertEqual(3, len(group_0.entities_ids))
+        self.assertEqual(3, len(group_0.entities_text))
+        self.assertEqual([0, 5, 6], group_0.entities_ids)
+        self.assertEqual(["Maria Rodriguez", "Maria Diaz Rodriguez", "M.D. Rodriguez"], group_0.entities_text)
+
+        self.assertEqual("Resolution No. 122", group_7.group_name)
+        self.assertEqual("LAW", group_7.type)
+        self.assertEqual(1, len(group_7.entities_ids))
+        self.assertEqual(1, len(group_7.entities_text))
+        self.assertEqual(["Resolution No. 122"], group_7.entities_text)
+        self.assertEqual([9], group_7.entities_ids)

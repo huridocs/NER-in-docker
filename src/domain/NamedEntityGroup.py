@@ -4,11 +4,13 @@ from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
 from rapidfuzz import fuzz
 
+from domain.PDFNamedEntity import PDFNamedEntity
+
 
 class NamedEntityGroup(BaseModel):
     type: NamedEntityType
     name: str
-    named_entities: list[NamedEntity] = list()
+    named_entities: list[NamedEntity | PDFNamedEntity] = list()
 
     def is_same_type(self, named_entity: NamedEntity) -> bool:
         return self.type == named_entity.type

@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 
 from domain.NamedEntityGroup import NamedEntityGroup
+from domain.NamedEntityType import NamedEntityType
 from drivers.rest.NamedEntityResponse import NamedEntityResponse
 
 
 class GroupResponse(BaseModel):
     group_name: str
+    type: NamedEntityType
     entities_ids: list[int]
     entities_text: list[str]
 
@@ -19,4 +21,9 @@ class GroupResponse(BaseModel):
                 entity_indexes.append(index)
                 entity_texts.append(entity.text)
 
-        return GroupResponse(group_name=named_entity_group.name, entities_ids=entity_indexes, entities_text=entity_texts)
+        return GroupResponse(
+            group_name=named_entity_group.name,
+            type=entities[entity_indexes[0]].type if entity_indexes else NamedEntityType.PERSON,
+            entities_ids=entity_indexes,
+            entities_text=entity_texts,
+        )

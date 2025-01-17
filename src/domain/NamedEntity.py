@@ -29,6 +29,7 @@ class NamedEntity(BaseModel):
     def normalize_date(self, text):
         if self.normalized_text:
             return self.normalized_text
+
         parsers = [parser for parser in default_parsers if parser != "relative-time"]
         settings = {"STRICT_PARSING": True, "PARSERS": parsers}
         return dateparser.parse(text).strftime("%Y-%m-%d") if search_dates(self.text, settings=settings) else self.text
