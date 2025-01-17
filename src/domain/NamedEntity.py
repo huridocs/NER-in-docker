@@ -1,3 +1,5 @@
+from dateparser.search import search_dates
+from dateparser_data.settings import default_parsers
 from pydantic import BaseModel
 from unidecode import unidecode
 import dateparser
@@ -27,7 +29,9 @@ class NamedEntity(BaseModel):
     def normalize_date(self, text):
         if self.normalized_text:
             return self.normalized_text
-        return dateparser.parse(text).strftime("%Y-%m-%d")
+        parsers = [parser for parser in default_parsers if parser != "relative-time"]
+        settings = {"STRICT_PARSING": True, "PARSERS": parsers}
+        return dateparser.parse(text).strftime("%Y-%m-%d") if search_dates(self.text, settings=settings) else self.text
 
     def normalize_entity_text(self):
         normalization_functions = {

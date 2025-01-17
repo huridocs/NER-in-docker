@@ -79,4 +79,4 @@ class GetGLiNEREntitiesUseCase:
         self.entities = [e for e in self.entities if search_dates(e.text)]
         self.entities = self.remove_overlapping_entities(self.entities)
         self.entities = self.remove_uncompleted_dates(self.entities)
-        return [entity for entity in self.entities if search_dates(entity.text)]
+        return self.entities

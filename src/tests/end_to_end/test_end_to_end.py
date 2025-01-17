@@ -91,22 +91,57 @@ class TestEndToEnd(TestCase):
         self.assertEqual(4, GroupResponse(**groups_dict[4]).entities_ids[0])
 
     def test_text_extraction_for_dates(self):
-        text = "Today is 13th January 2024. It should be Wednesday"
+        text = "Today is 13th of January 2024. One month later it will be 13th of February. "
+        text += "My birthday this year is January 13th of 2024."
         data = {"text": text}
         result = requests.post(f"{self.service_url}", data=data)
 
-        entities_dict = result.json()
-        entity = NamedEntityResponse(**entities_dict[0])
+        entities_dict = result.json()["entities"]
+        groups_dict = result.json()["groups"]
+        entity_1 = NamedEntityResponse(**entities_dict[0])
+        entity_2 = NamedEntityResponse(**entities_dict[1])
+        entity_3 = NamedEntityResponse(**entities_dict[2])
+
+        group_1 = GroupResponse(**groups_dict[0])
+        group_2 = GroupResponse(**groups_dict[1])
 
         self.assertEqual(200, result.status_code)
 
-        self.assertEqual(1, len(entities_dict))
+        self.assertEqual(3, len(entities_dict))
 
-        self.assertEqual("13th January 2024", entity.text)
-        self.assertEqual("DATE", entity.type)
-        self.assertEqual("2024-01-13", entity.group_name)
-        self.assertEqual(9, entity.character_start)
-        self.assertEqual(26, entity.character_end)
+        self.assertEqual("13th of January 2024", entity_1.text)
+        self.assertEqual("DATE", entity_1.type)
+        self.assertEqual("2024-01-13", entity_1.group_name)
+        self.assertEqual(9, entity_1.character_start)
+        self.assertEqual(29, entity_1.character_end)
+
+        self.assertEqual("13th of February", entity_2.text)
+        self.assertEqual("DATE", entity_2.type)
+        self.assertEqual("13th of February", entity_2.group_name)
+        self.assertEqual(58, entity_2.character_start)
+        self.assertEqual(74, entity_2.character_end)
+
+        self.assertEqual("January 13th of 2024", entity_3.text)
+        self.assertEqual("DATE", entity_3.type)
+        self.assertEqual("2024-01-13", entity_3.group_name)
+        self.assertEqual(101, entity_3.character_start)
+        self.assertEqual(121, entity_3.character_end)
+
+        self.assertEqual(2, len(groups_dict))
+
+        self.assertEqual("2024-01-13", group_1.group_name)
+        self.assertEqual(2, len(group_1.entities_ids))
+        self.assertEqual(2, len(group_1.entities_text))
+        self.assertEqual("13th of January 2024", group_1.entities_text[0])
+        self.assertEqual("January 13th of 2024", group_1.entities_text[1])
+        self.assertEqual(0, group_1.entities_ids[0])
+        self.assertEqual(2, group_1.entities_ids[1])
+
+        self.assertEqual("13th of February", group_2.group_name)
+        self.assertEqual(1, len(group_2.entities_ids))
+        self.assertEqual(1, len(group_2.entities_text))
+        self.assertEqual("13th of February", group_2.entities_text[0])
+        self.assertEqual(1, group_2.entities_ids[0])
 
     # def test_pdf_extraction(self):
     #     pdf_path: Path = Path(ROOT_PATH, "src", "tests", "end_to_end", "test_pdfs", "test_document.pdf")
