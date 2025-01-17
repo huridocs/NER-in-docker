@@ -90,8 +90,6 @@ class TestEndToEnd(TestCase):
         self.assertEqual("Resolution No. 122", GroupResponse(**groups_dict[4]).entities_text[0])
         self.assertEqual(4, GroupResponse(**groups_dict[4]).entities_ids[0])
 
-
-
     def test_text_extraction_for_dates(self):
         text = "Today is 13th January 2024. It should be Wednesday"
         data = {"text": text}

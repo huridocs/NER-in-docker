@@ -8,7 +8,6 @@ from domain.NamedEntity import NamedEntity
 from domain.NamedEntityGroup import NamedEntityGroup
 from drivers.rest.GroupResponse import GroupResponse
 from drivers.rest.NamedEntitiesResponse import NamedEntitiesResponse
-from drivers.rest.NamedEntityResponse import NamedEntityResponse
 from drivers.rest.PDFNamedEntityResponse import PDFNamedEntityResponse
 from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
@@ -38,12 +37,6 @@ async def info():
 async def get_named_entities(text: str = Form("")):
     entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
     named_entity_groups: list[NamedEntityGroup] = NamedEntityMergerUseCase().merge(entities)
-    named_entity_responses = [
-        NamedEntityResponse.from_named_entity(entity, group.name)
-        for group in named_entity_groups
-        for entity in group.named_entities
-    ]
-    named_entity_responses.sort(key=lambda x: x.character_start)
     return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)
 
 
