@@ -6,7 +6,7 @@ from domain.NamedEntityGroup import NamedEntityGroup
 class PDFsGroupNameRepository(ABC):
 
     @abstractmethod
-    def save_groups(self, named_entity_groups: list[NamedEntityGroup]):
+    def save_group(self, named_entity_groups: list[NamedEntityGroup]):
         pass
 
     @abstractmethod

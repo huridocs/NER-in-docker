@@ -11,7 +11,7 @@ class InMemoryPDFsGroupNameRepository(PDFsGroupNameRepository):
     def __init__(self):
         self.groups_in_memory = []
 
-    def save_groups(self, named_entity_groups: list[NamedEntityGroup]):
+    def save_group(self, named_entity_groups: list[NamedEntityGroup]):
         for group in named_entity_groups:
             self.groups_in_memory.append(group)
 
