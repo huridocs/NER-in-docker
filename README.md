@@ -23,11 +23,7 @@ Get the entities from a text:
 
 Get the entities from a PDF:
 
-    curl -X POST -F 'file=@/PATH/TO/PDF/pdf_name.pdf' localhost:5070/pdf
-
-Save the extracted PDF named entities to a local folder:
-
-    curl -X POST -F 'file=@/PATH/TO/PDF/pdf_name.pdf' localhost:5070/pdf -F "save_locally=true"
+    curl -X POST -F "file=@/PATH/TO/PDF/pdf_name.pdf" localhost:5070
 
 To stop the server:
 

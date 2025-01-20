@@ -16,7 +16,7 @@ class TestEndToEnd(TestCase):
         text += "Maria Rodriguez was in the Senate when Resolution No. 122 passed on twelve of June 2025."
 
         data = {"text": text}
-        result = requests.post(f"{self.service_url}", data=data)
+        result = requests.post(self.service_url, data=data)
 
         entities_dict = result.json()["entities"]
         groups_dict = result.json()["groups"]
@@ -157,7 +157,7 @@ class TestEndToEnd(TestCase):
         pdf_path: Path = Path(ROOT_PATH, "src", "tests", "end_to_end", "test_pdfs", "test_document.pdf")
         with open(pdf_path, "rb") as pdf_file:
             files = {"file": pdf_file}
-            response = requests.post(f"{self.service_url}/pdf", files=files)
+            response = requests.post(self.service_url, files=files)
 
         entities_dict = response.json()["entities"]
         groups_dict = response.json()["groups"]

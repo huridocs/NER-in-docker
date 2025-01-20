@@ -32,16 +32,16 @@ async def info():
 
 
 @app.post("/")
-async def get_named_entities(text: str = Form("")):
-    entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
-    named_entity_groups: list[NamedEntityGroup] = NamedEntityMergerUseCase().merge(entities)
-    return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)
+async def get_named_entities(text: str = Form(""), file: UploadFile = File(None)):
+    if not text and not file:
+        return []
 
+    if file:
+        pdf_path: Path = pdf_content_to_pdf_path(file.file.read())
+        pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
+        entities = NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository).get_entities(pdf_path)
+    else:
+        entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
 
-@app.post("/pdf")
-async def get_pdf_named_entities(file: UploadFile = File(...)):
-    pdf_path: Path = pdf_content_to_pdf_path(file.file.read())
-    pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
-    entities = NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository).get_entities(pdf_path)
     named_entity_groups: list[NamedEntityGroup] = NamedEntityMergerUseCase().merge(entities)
     return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)
