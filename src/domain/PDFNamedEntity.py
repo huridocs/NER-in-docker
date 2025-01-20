@@ -1,4 +1,3 @@
-from domain.BoundingBox import BoundingBox
 from domain.NamedEntity import NamedEntity
 from domain.PDFSegment import PDFSegment
 
