@@ -6,7 +6,8 @@ from fastapi import FastAPI, Form, UploadFile, File
 from adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityGroup import NamedEntityGroup
-from drivers.rest.NamedEntitiesResponse import NamedEntitiesResponse
+from drivers.rest.catch_exceptions import catch_exceptions
+from drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
 from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 from use_cases.NamedEntityMergerUseCase import NamedEntityMergerUseCase
@@ -32,10 +33,8 @@ async def info():
 
 
 @app.post("/")
-async def get_named_entities(text: str = Form(""), file: UploadFile = File(None)):
-    if not text and not file:
-        return []
-
+@catch_exceptions
+async def get_named_entities(text: str = Form(None), file: UploadFile = File(None)):
     if file:
         pdf_path: Path = pdf_content_to_pdf_path(file.file.read())
         pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()

@@ -4,13 +4,37 @@ import requests
 
 from configuration import ROOT_PATH
 from domain.NamedEntityType import NamedEntityType
-from drivers.rest.GroupResponse import GroupResponse
-from drivers.rest.NamedEntityResponse import NamedEntityResponse
-from drivers.rest.PDFNamedEntityResponse import PDFNamedEntityResponse
+from drivers.rest.response_entities.GroupResponse import GroupResponse
+from drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
+from drivers.rest.response_entities.PDFNamedEntityResponse import PDFNamedEntityResponse
 
 
 class TestEndToEnd(TestCase):
     service_url = "http://localhost:5070"
+
+    def test_empty_query(self):
+        result = requests.post(self.service_url)
+
+        self.assertEqual(400, result.status_code)
+        self.assertEqual("No file or text provided", result.json()["detail"])
+
+    def test_empty_text_query(self):
+        data = {"text": ""}
+        result = requests.post(self.service_url, data=data)
+
+        self.assertEqual(200, result.status_code)
+        self.assertEqual([], result.json()["entities"])
+        self.assertEqual([], result.json()["groups"])
+
+    def test_wrong_pdf(self):
+        pdf_path: Path = Path(ROOT_PATH, "src", "tests", "end_to_end", "test_pdfs", "not_a_pdf.pdf")
+
+        with open(pdf_path, "rb") as pdf_file:
+            files = {"file": pdf_file}
+            result = requests.post(self.service_url, files=files)
+
+        self.assertEqual(400, result.status_code)
+        self.assertEqual("Unprocessable PDF file", result.json()["detail"])
 
     def test_text_extraction(self):
         text = (

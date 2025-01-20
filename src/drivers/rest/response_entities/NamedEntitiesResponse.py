@@ -3,9 +3,9 @@ from pydantic import BaseModel
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityGroup import NamedEntityGroup
 from domain.PDFNamedEntity import PDFNamedEntity
-from drivers.rest.NamedEntityResponse import NamedEntityResponse
-from drivers.rest.GroupResponse import GroupResponse
-from drivers.rest.PDFNamedEntityResponse import PDFNamedEntityResponse
+from drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
+from drivers.rest.response_entities.GroupResponse import GroupResponse
+from drivers.rest.response_entities.PDFNamedEntityResponse import PDFNamedEntityResponse
 
 
 class NamedEntitiesResponse(BaseModel):

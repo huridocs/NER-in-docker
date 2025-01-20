@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from domain.NamedEntityType import NamedEntityType
 from domain.PDFNamedEntity import PDFNamedEntity
-from drivers.rest.SegmentResponse import SegmentResponse
+from drivers.rest.response_entities.SegmentResponse import SegmentResponse
 
 
 class PDFNamedEntityResponse(BaseModel):

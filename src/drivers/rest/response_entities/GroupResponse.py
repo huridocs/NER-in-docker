@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from domain.NamedEntityGroup import NamedEntityGroup
 from domain.NamedEntityType import NamedEntityType
-from drivers.rest.NamedEntityResponse import NamedEntityResponse
+from drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
 
 
 class GroupResponse(BaseModel):
