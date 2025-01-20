@@ -103,6 +103,13 @@ class NamedEntityGroup(BaseModel):
 
         return self.is_similar_entity(named_entity)
 
+    def is_same_group(self, other_group: "NamedEntityGroup") -> bool:
+        for entity in other_group.named_entities:
+            if self.belongs_to_group(entity):
+                return True
+
+        return False
+
     def add_named_entity(self, named_entity: NamedEntity):
         if self.type == NamedEntityType.DATE and named_entity.normalized_text:
             self.name = named_entity.normalized_text
