@@ -104,8 +104,15 @@ class NamedEntityGroup(BaseModel):
         return self.is_similar_entity(named_entity)
 
     def is_same_group(self, other_group: "NamedEntityGroup") -> bool:
+        if self.type != other_group.type:
+            return False
+
         for entity in other_group.named_entities:
             if self.belongs_to_group(entity):
+                return True
+
+        for entity in self.named_entities:
+            if other_group.belongs_to_group(entity):
                 return True
 
         return False
