@@ -1,9 +1,8 @@
 import sqlite3
-from os import remove
 from pathlib import Path
-from adapters.GroupPersistence import GroupPersistence
+
+from adapters.EntityPersistence import EntityPersistence
 from configuration import ROOT_PATH
-from domain.NamedEntity import NamedEntity
 from domain.NamedEntityGroup import NamedEntityGroup
 from domain.NamedEntityType import NamedEntityType
 from ports.PDFsGroupNameRepository import PDFsGroupNameRepository
@@ -13,52 +12,57 @@ class SQLitePDFsGroupNameRepository(PDFsGroupNameRepository):
 
     def __init__(self, database_name: str = "named_entities.db"):
         self.database_name = database_name
-        self.connection = sqlite3.connect(Path(ROOT_PATH, "data", database_name))
-        self.cursor = self.connection.cursor()
-        self.create_database()
-        self.saved_groups: list[NamedEntityGroup] = self.load_groups_persistence()
+        self.database_path = Path(ROOT_PATH, "data", database_name)
+        self.groups_in_database: list[NamedEntityGroup] = self.load_groups_from_database()
+
+    def get_connection(self):
+        connection = sqlite3.connect(self.database_path)
+        cursor = connection.cursor()
+        return connection, cursor
+
+    def exists_database(self) -> bool:
+        return self.database_path.exists()
 
     def create_database(self):
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS groups (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                type TEXT NOT NULL
-            )"""
-        )
-        self.cursor.execute(
+        if self.exists_database():
+            return
+
+        connection, cursor = self.get_connection()
+        cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS entities (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                group_id INTEGER NOT NULL,
-                entity_text TEXT NOT NULL,
-                FOREIGN KEY (group_id) REFERENCES groups (id)
+                group_name TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_text TEXT NOT NULL
             )
         """
         )
-        self.connection.commit()
+        connection.commit()
 
     def delete_database(self):
-        if Path(ROOT_PATH, "data", self.database_name).exists():
-            remove((Path(ROOT_PATH, "data", self.database_name)))
+        Path(ROOT_PATH, "data", self.database_name).unlink(missing_ok=True)
 
-    def save_group(self, group: [NamedEntityGroup]):
-        self.cursor.execute("INSERT INTO groups (name, type) VALUES (?, ?)", (group.name, group.type.name))
-        group_id = self.cursor.lastrowid
+    def save_group(self, group: NamedEntityGroup):
+        self.create_database()
+        connection, cursor = self.get_connection()
         for entity in group.named_entities:
-            self.cursor.execute("INSERT INTO entities (group_id, entity_text) VALUES (?, ?)", (group_id, entity.text))
-        self.connection.commit()
+            cursor.execute(
+                """INSERT INTO entities (group_name, entity_type, entity_text) VALUES (?, ?, ?)""",
+                (group.name, str(entity.type), entity.text),
+            )
+        connection.commit()
+        self.groups_in_database.append(group)
 
     def group_exists_in_database(self, group: NamedEntityGroup) -> tuple[bool, NamedEntityGroup]:
-        for group_in_database in self.saved_groups:
+        for group_in_database in self.groups_in_database:
             if group_in_database.is_same_group(group):
                 group.name = group_in_database.name
-                return True, group_in_database
+                return True, group
 
         return False, group
 
-    def set_group_names_from_storage(self, old_named_entity_groups: list[NamedEntityGroup]):
+    def update_group_names_by_old_groups(self, old_named_entity_groups: list[NamedEntityGroup]):
         new_named_entity_groups = []
         for old_group in old_named_entity_groups:
             group_exists, new_group = self.group_exists_in_database(old_group)
@@ -69,25 +73,27 @@ class SQLitePDFsGroupNameRepository(PDFsGroupNameRepository):
         return new_named_entity_groups
 
     def get_groups_persistence(self) -> list[NamedEntityGroup]:
-        return self.saved_groups
+        return self.groups_in_database
 
-    def load_groups_persistence(self):
-        self.cursor.execute(
-            """
-            SELECT g.id, g.name, g.type, e.entity_text
-            FROM groups g
-            LEFT JOIN entities e ON g.id = e.group_id
-        """
-        )
-        rows = self.cursor.fetchall()
+    def load_groups_from_database(self) -> list[NamedEntityGroup]:
+        self.create_database()
 
-        groups_dict = {}
-        for group_id, name, group_type, entity_text in rows:
-            if group_id not in groups_dict:
-                groups_dict[group_id] = GroupPersistence(
-                    name=name, type=group_type, entities_names=[]
-                ).to_named_entity_group()
-            if entity_text:
-                groups_dict[group_id].named_entities.append(NamedEntity(text=entity_text, type=NamedEntityType(group_type)))
+        connection, cursor = self.get_connection()
 
-        return list(groups_dict.values())
+        cursor.execute("SELECT * FROM entities")
+        rows = cursor.fetchall()
+        entity_persistence = [EntityPersistence.from_row(row) for row in rows]
+        groups = {}
+
+        for persistence_entity in entity_persistence:
+            groups.setdefault(
+                persistence_entity.group_name,
+                NamedEntityGroup(
+                    name=persistence_entity.group_name,
+                    type=NamedEntityType(persistence_entity.entity_type),
+                    named_entities=[],
+                ),
+            )
+            groups[persistence_entity.group_name].named_entities.append(persistence_entity.to_named_entity())
+
+        return list(groups.values())

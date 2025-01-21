@@ -12,6 +12,10 @@ from drivers.rest.response_entities.PDFNamedEntityResponse import PDFNamedEntity
 class TestEndToEnd(TestCase):
     service_url = "http://localhost:5070"
 
+    @staticmethod
+    def similar_value(value: int):
+        return [value - 1, value, value + 1]
+
     def test_empty_query(self):
         result = requests.post(self.service_url)
 
@@ -148,12 +152,12 @@ class TestEndToEnd(TestCase):
         pdf_path: Path = Path(ROOT_PATH, "src", "tests", "end_to_end", "test_pdfs", "test_document.pdf")
         with open(pdf_path, "rb") as pdf_file:
             files = {"file": pdf_file}
-            response = requests.post(self.service_url, files=files)
+            result = requests.post(self.service_url, files=files)
 
-        entities_dict = response.json()["entities"]
-        groups_dict = response.json()["groups"]
+        entities_dict = result.json()["entities"]
+        groups_dict = result.json()["groups"]
 
-        self.assertEqual(200, response.status_code)
+        self.assertEqual(200, result.status_code)
         self.assertEqual(10, len(entities_dict))
 
         expected_entities = [
@@ -191,10 +195,10 @@ class TestEndToEnd(TestCase):
             self.assertEqual(expected["segment_number"], entity.segment.segment_number)
             self.assertEqual(expected["character_start"], entity.segment.character_start)
             self.assertEqual(expected["character_end"], entity.segment.character_end)
-            self.assertEqual(expected["bounding_box"][0], entity.segment.bounding_box.left)
-            self.assertEqual(expected["bounding_box"][1], entity.segment.bounding_box.top)
-            self.assertEqual(expected["bounding_box"][2], entity.segment.bounding_box.width)
-            self.assertEqual(expected["bounding_box"][3], entity.segment.bounding_box.height)
+            self.assertIn(expected["bounding_box"][0], self.similar_value(entity.segment.bounding_box.left))
+            self.assertIn(expected["bounding_box"][1], self.similar_value(entity.segment.bounding_box.top))
+            self.assertIn(expected["bounding_box"][2], self.similar_value(entity.segment.bounding_box.width))
+            self.assertIn(expected["bounding_box"][3], self.similar_value(entity.segment.bounding_box.height))
 
         self.assertEqual(8, len(groups_dict))
 

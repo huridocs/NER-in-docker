@@ -4,78 +4,51 @@ from domain.NamedEntityGroup import NamedEntityGroup
 from domain.NamedEntityType import NamedEntityType
 from domain.PDFNamedEntity import PDFNamedEntity
 
+TEST_DATABASE_NAME = "test.db"
+
 
 class TestPersistencePDFsGroupNameRepository(TestCase):
 
-    def test_save_group(self):
-        SQLitePDFsGroupNameRepository("test.db").delete_database()
-        group_name_repository = SQLitePDFsGroupNameRepository("test.db")
+    def setUp(self):
         entity_1 = PDFNamedEntity(text="María Diaz", type=NamedEntityType.PERSON)
         entity_2 = PDFNamedEntity(text="María Diaz Perez", type=NamedEntityType.PERSON)
-        other_entity = PDFNamedEntity(text="Other Entity", type=NamedEntityType.ORGANIZATION)
-        group_1 = NamedEntityGroup(name="María Diaz Perez", type=NamedEntityType.PERSON, named_entities=[entity_1, entity_2])
-        group_2 = NamedEntityGroup(name="Other Group", type=NamedEntityType.ORGANIZATION, named_entities=[other_entity])
-        group_name_repository.save_group(group_1)
-        group_name_repository.save_group(group_2)
-
-        groups_persistence = group_name_repository.load_groups_persistence()
-
-        self.assertEqual(2, len(groups_persistence))
-
-        self.assertEqual("María Diaz Perez", groups_persistence[0].name)
-        self.assertEqual(NamedEntityType.PERSON, groups_persistence[0].type)
-        self.assertEqual(2, len(groups_persistence[0].named_entities))
-        self.assertEqual("María Diaz", groups_persistence[0].named_entities[0].text)
-        self.assertEqual("María Diaz Perez", groups_persistence[0].named_entities[1].text)
-
-        self.assertEqual("Other Group", groups_persistence[1].name)
-        self.assertEqual(NamedEntityType.ORGANIZATION, groups_persistence[1].type)
-        self.assertEqual(1, len(groups_persistence[1].named_entities))
-        self.assertEqual("Other Entity", groups_persistence[1].named_entities[0].text)
-
-    def test_load_groups_persistence(self):
-        SQLitePDFsGroupNameRepository("test.db").delete_database()
-        group_name_repository = SQLitePDFsGroupNameRepository("test.db")
-        group_name_repository.cursor.execute(
-            "INSERT INTO groups (id, name, type) VALUES (?, ?, ?)", (1, "Maria Diaz Perez", "PERSON")
+        group_to_save = NamedEntityGroup(
+            name="María Diaz Perez", type=NamedEntityType.PERSON, named_entities=[entity_1, entity_2]
         )
-        group_name_repository.cursor.execute(
-            "INSERT INTO groups (id, name, type) VALUES (?, ?, ?)", (2, "HURIDOCS", "ORGANIZATION")
-        )
-        entities_data = [(1, "Maria Diaz Perez"), (1, "Maria Diaz"), (2, "HURIDOCS")]
-        group_name_repository.cursor.executemany("INSERT INTO entities (group_id, entity_text) VALUES (?, ?)", entities_data)
-        group_name_repository.connection.commit()
 
-        loaded_groups = group_name_repository.load_groups_persistence()
-        self.assertEqual(len(loaded_groups), 2)
+        sqlite_repository = SQLitePDFsGroupNameRepository(TEST_DATABASE_NAME)
+        sqlite_repository.delete_database()
+        sqlite_repository.save_group(group_to_save)
 
-        person_group = [g for g in loaded_groups if g.type == "PERSON"][0]
-        org_group = [g for g in loaded_groups if g.type == "ORGANIZATION"][0]
+    def test_save_group(self):
+        entity_1 = PDFNamedEntity(text="HURIDOCS ORG", type=NamedEntityType.ORGANIZATION)
+        entity_2 = PDFNamedEntity(text="HURIDOCS", type=NamedEntityType.ORGANIZATION)
+        group = NamedEntityGroup(name="HURIDOCS ORG", type=NamedEntityType.ORGANIZATION, named_entities=[entity_1, entity_2])
 
-        self.assertEqual(person_group.name, "Maria Diaz Perez")
-        self.assertEqual(len(person_group.named_entities), 2)
-        self.assertEqual("Maria Diaz", person_group.named_entities[0].text)
-        self.assertEqual("Maria Diaz Perez", person_group.named_entities[1].text)
+        sqlite_repository = SQLitePDFsGroupNameRepository(TEST_DATABASE_NAME)
+        sqlite_repository.save_group(group)
 
-        self.assertEqual(org_group.name, "HURIDOCS")
-        self.assertEqual(len(org_group.named_entities), 1)
-        self.assertEqual("HURIDOCS", org_group.named_entities[0].text)
+        groups_in_database = sqlite_repository.groups_in_database
+
+        self.assertEqual(2, len(groups_in_database))
+
+        self.assertEqual("María Diaz Perez", groups_in_database[0].name)
+        self.assertEqual(NamedEntityType.PERSON, groups_in_database[0].type)
+
+        person_entities = groups_in_database[0].named_entities
+        self.assertEqual(2, len(person_entities))
+        self.assertEqual("María Diaz", person_entities[0].text)
+        self.assertEqual("María Diaz Perez", person_entities[1].text)
+
+        self.assertEqual("HURIDOCS ORG", groups_in_database[1].name)
+        self.assertEqual(NamedEntityType.ORGANIZATION, groups_in_database[1].type)
+
+        organization_entities = groups_in_database[1].named_entities
+        self.assertEqual(2, len(organization_entities))
+        self.assertEqual({"HURIDOCS", "HURIDOCS ORG"}, {organization_entities[0].text, organization_entities[1].text})
 
     def test_set_group_names_from_storage(self):
-        SQLitePDFsGroupNameRepository("test.db").delete_database()
-        group_name_repository = SQLitePDFsGroupNameRepository("test.db")
-        entity_1 = PDFNamedEntity(text="María Diaz", type=NamedEntityType.PERSON)
-        entity_2 = PDFNamedEntity(text="María Diaz Perez", type=NamedEntityType.PERSON)
-        initial_person_group = NamedEntityGroup(
-            name="Maria Diaz Perez", type=NamedEntityType.PERSON, named_entities=[entity_1, entity_2]
-        )
-
-        org_entity = PDFNamedEntity(text="HURIDOCS", type=NamedEntityType.ORGANIZATION)
-        org_group = NamedEntityGroup(name="HURIDOCS", type=NamedEntityType.ORGANIZATION, named_entities=[org_entity])
-
-        group_name_repository.save_group(initial_person_group)
-        group_name_repository.save_group(org_group)
-        group_name_repository.saved_groups = group_name_repository.load_groups_persistence()
+        group_name_repository = SQLitePDFsGroupNameRepository(TEST_DATABASE_NAME)
 
         new_entity_1 = PDFNamedEntity(text="María D.", type=NamedEntityType.PERSON)
         new_entity_2 = PDFNamedEntity(text="María Diaz", type=NamedEntityType.PERSON)
@@ -85,13 +58,14 @@ class TestPersistencePDFsGroupNameRepository(TestCase):
         )
 
         another_person = PDFNamedEntity(text="Jane Doe", type=NamedEntityType.PERSON)
-        another_person_group = NamedEntityGroup(
-            name="Jane Doe", type=NamedEntityType.PERSON, named_entities=[another_person]
-        )
+        other_group = NamedEntityGroup(name="Jane Doe", type=NamedEntityType.PERSON, named_entities=[another_person])
 
-        updated_groups = group_name_repository.set_group_names_from_storage([new_person_group, another_person_group])
+        updated_groups = group_name_repository.update_group_names_by_old_groups([new_person_group, other_group])
         self.assertEqual(2, len(updated_groups))
-        self.assertEqual("Maria Diaz Perez", updated_groups[0].name)
+        self.assertEqual("María Diaz Perez", updated_groups[0].name)
         self.assertEqual(2, len(updated_groups[0].named_entities))
+        self.assertEqual(PDFNamedEntity, type(updated_groups[0].named_entities[1]))
+
+        self.assertEqual(PDFNamedEntity, type(updated_groups[1].named_entities[0]))
         self.assertEqual("Jane Doe", updated_groups[1].name)
         self.assertEqual(1, len(updated_groups[1].named_entities))

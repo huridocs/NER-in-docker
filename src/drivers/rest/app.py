@@ -4,14 +4,17 @@ import uuid
 from pathlib import Path
 from fastapi import FastAPI, Form, UploadFile, File
 from adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
-from adapters.PersistencePDFsGroupNameRepository import SQLitePDFsGroupNameRepository
+from adapters.SQLitePDFsGroupNameRepository import SQLitePDFsGroupNameRepository
 from domain.NamedEntity import NamedEntity
 from drivers.rest.catch_exceptions import catch_exceptions
 from drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
 from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 from use_cases.NamedEntityMergerUseCase import NamedEntityMergerUseCase
-from use_cases.PDFsNamedEntityMergerUseCase import PDFNamedEntityMergerUseCase
+from use_cases.PDFNamedEntityMergerUseCase import PDFNamedEntityMergerUseCase
+
+
+app = FastAPI()
 
 
 def get_file_path(file_name, extension) -> Path:
@@ -25,10 +28,7 @@ def pdf_content_to_pdf_path(file_content) -> Path:
     return pdf_path
 
 
-app = FastAPI()
-
-
-@app.get("/info")
+@app.get("/")
 async def info():
     return sys.version
 
@@ -37,14 +37,14 @@ async def info():
 @catch_exceptions
 async def get_named_entities(text: str = Form(None), file: UploadFile = File(None)):
     if not file:
-        entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
-        named_entity_groups = NamedEntityMergerUseCase().merge(entities)
+        named_entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
+        named_entity_groups = NamedEntityMergerUseCase().merge(named_entities)
         return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)
 
     pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
     pdf_path = pdf_content_to_pdf_path(file.file.read())
-    entities = NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository).get_entities(pdf_path)
+    pdf_named_entities = NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository).get_entities(pdf_path)
 
     pdfs_group_names_repository = SQLitePDFsGroupNameRepository()
-    named_entity_groups = PDFNamedEntityMergerUseCase(pdfs_group_names_repository).merge(entities)
+    named_entity_groups = PDFNamedEntityMergerUseCase(pdfs_group_names_repository).merge(pdf_named_entities)
     return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)

@@ -11,11 +11,7 @@ class InMemoryPDFsGroupNameRepository(PDFsGroupNameRepository):
     def __init__(self):
         self.groups_in_memory = []
 
-    def save_group(self, named_entity_groups: list[NamedEntityGroup]):
-        for group in named_entity_groups:
-            self.groups_in_memory.append(group)
-
-    def set_group_names_from_storage(self, named_entity_groups: list[NamedEntityGroup]):
+    def update_group_names_by_old_groups(self, named_entity_groups: list[NamedEntityGroup]):
         groups_with_in_memory_name = []
         for group in named_entity_groups:
             groups_with_in_memory_name.append(group)
@@ -23,6 +19,8 @@ class InMemoryPDFsGroupNameRepository(PDFsGroupNameRepository):
                 if group_in_memory.is_same_group(group):
                     groups_with_in_memory_name[-1].name = group_in_memory.name
                     break
+
+            self.groups_in_memory.append(group)
 
         return groups_with_in_memory_name
 
@@ -40,7 +38,9 @@ class TestPDFNamedEntityMergerUseCase(TestCase):
         self.assertEqual("María Diaz", named_entities_grouped[0].name)
         self.assertEqual(NamedEntityType.PERSON, named_entities_grouped[0].type)
         self.assertEqual(2, len(named_entities_grouped[0].named_entities))
+        self.assertEqual(PDFNamedEntity, type(named_entities_grouped[0].named_entities[0]))
         self.assertEqual("María Diaz", named_entities_grouped[0].named_entities[0].text)
+        self.assertEqual(PDFNamedEntity, type(named_entities_grouped[0].named_entities[1]))
         self.assertEqual("María Diaz", named_entities_grouped[0].named_entities[1].text)
 
         self.assertEqual("Other Name", named_entities_grouped[1].name)
@@ -62,4 +62,5 @@ class TestPDFNamedEntityMergerUseCase(TestCase):
         self.assertEqual("María Diaz Perez", named_entities_grouped[0].name)
         self.assertEqual(NamedEntityType.PERSON, named_entities_grouped[0].type)
         self.assertEqual(1, len(named_entities_grouped[0].named_entities))
+        self.assertEqual(PDFNamedEntity, type(named_entities_grouped[0].named_entities[0]))
         self.assertEqual("María Diaz", named_entities_grouped[0].named_entities[0].text)

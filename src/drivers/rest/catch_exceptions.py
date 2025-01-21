@@ -14,7 +14,8 @@ def catch_exceptions(func):
             raise HTTPException(status_code=400, detail="No file or text provided")
         except HTTPError:
             raise HTTPException(status_code=400, detail="Unprocessable PDF file")
-        except Exception:
+        except Exception as e:
+            print(f"error {e}")
             raise HTTPException(status_code=422, detail="Error see traceback")
 
     return wrapper

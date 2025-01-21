@@ -41,7 +41,7 @@ class GetGLiNEREntitiesUseCase:
                     text=entity["text"],
                     character_start=entity["start"],
                     character_end=entity["end"],
-                ).normalize_entity_text()
+                ).get_with_normalize_entity_text()
             )
         return result
 

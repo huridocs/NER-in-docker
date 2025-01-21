@@ -19,7 +19,7 @@ class NamedEntityGroup(BaseModel):
         return self.name == named_entity.normalized_text
 
     def is_similar_entity(self, named_entity: NamedEntity) -> bool:
-        normalized_entity = named_entity.normalize_entity_text()
+        normalized_entity = named_entity.get_with_normalize_entity_text()
         entity_normalized_text = normalized_entity.normalized_text
 
         for each_normalized_text in [x.normalized_text for x in self.named_entities]:
@@ -111,19 +111,15 @@ class NamedEntityGroup(BaseModel):
             if self.belongs_to_group(entity):
                 return True
 
-        for entity in self.named_entities:
-            if other_group.belongs_to_group(entity):
-                return True
-
         return False
 
     def add_named_entity(self, named_entity: NamedEntity):
         if self.type == NamedEntityType.DATE and named_entity.normalized_text:
             self.name = named_entity.normalized_text
-            self.named_entities.append(named_entity.normalize_entity_text())
+            self.named_entities.append(named_entity.get_with_normalize_entity_text())
             return
 
         if len(named_entity.text) > len(self.name):
             self.name = named_entity.text
 
-        self.named_entities.append(named_entity.normalize_entity_text())
+        self.named_entities.append(named_entity.get_with_normalize_entity_text())

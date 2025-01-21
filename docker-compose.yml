@@ -7,8 +7,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - ./data:/app/data
     networks:
       - network-ner
     ports:
@@ -28,6 +26,3 @@ services:
 networks:
   network-ner:
     driver: bridge
-
-volumes:
-  data:

@@ -36,7 +36,7 @@ jobs:
     - name: Check API ready
       uses: emilioschepis/wait-for-endpoint@v1.0.3
       with:
-        url: http://localhost:5070/info
+        url: http://localhost:5070
         method: GET
         expected-status: 200
         timeout: 120000

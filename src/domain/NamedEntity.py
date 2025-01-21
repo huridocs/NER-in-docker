@@ -34,7 +34,7 @@ class NamedEntity(BaseModel):
         settings = {"STRICT_PARSING": True, "PARSERS": parsers}
         return dateparser.parse(text).strftime("%Y-%m-%d") if search_dates(self.text, settings=settings) else self.text
 
-    def normalize_entity_text(self):
+    def get_with_normalize_entity_text(self):
         normalization_functions = {
             NamedEntityType.PERSON: self.normalize_text,
             NamedEntityType.ORGANIZATION: self.normalize_text,
