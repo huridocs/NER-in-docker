@@ -45,7 +45,7 @@ start_no_gpu:
 	docker compose up --build
 
 stop:
-	docker compose stop
+	docker compose stop ; docker compose -f docker-compose-gpu.yml stop
 
 test:
 	. .venv/bin/activate; command cd src; command python -m pytest
