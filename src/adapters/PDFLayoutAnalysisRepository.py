@@ -7,10 +7,11 @@ from ports.PDFToSegmentsRepository import PDFToSegmentsRepository
 
 class PDFLayoutAnalysisRepository(PDFToSegmentsRepository):
     @staticmethod
-    def get_segments(pdf_path: Path) -> list[PDFSegment]:
+    def get_segments(pdf_path: Path, fast: bool = False) -> list[PDFSegment]:
         with open(pdf_path, "rb") as pdf_file:
             files = {"file": pdf_file}
-            response = requests.post(f"{PDF_ANALYSIS_SERVICE_URL}", files=files)
+            data = {"fast": fast}
+            response = requests.post(PDF_ANALYSIS_SERVICE_URL, files=files, data=data)
             response.raise_for_status()
             segment_boxes = response.json()
             return [

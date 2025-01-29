@@ -11,8 +11,8 @@ class NamedEntitiesFromPDFUseCase:
     def __init__(self, pdf_to_segments_repository: PDFToSegmentsRepository):
         self.pdf_to_segments_repository = pdf_to_segments_repository
 
-    def get_entities(self, pdf_path: Path) -> list[PDFNamedEntity]:
-        pdf_segments: list[PDFSegment] = self.pdf_to_segments_repository.get_segments(pdf_path)
+    def get_entities(self, pdf_path: Path, fast: bool = False) -> list[PDFNamedEntity]:
+        pdf_segments: list[PDFSegment] = self.pdf_to_segments_repository.get_segments(pdf_path, fast)
         entities: list[PDFNamedEntity] = []
         named_entities_from_text_use_case = NamedEntitiesFromTextUseCase()
         for pdf_segment in pdf_segments:

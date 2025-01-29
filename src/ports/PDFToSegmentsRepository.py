@@ -7,5 +7,5 @@ class PDFToSegmentsRepository(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_segments(pdf_path: Path) -> list[PDFSegment]:
+    def get_segments(pdf_path: Path, fast: bool) -> list[PDFSegment]:
         pass
