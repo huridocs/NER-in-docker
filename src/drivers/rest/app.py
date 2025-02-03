@@ -8,7 +8,6 @@ from adapters.SQLitePDFsGroupNameRepository import SQLitePDFsGroupNameRepository
 from domain.NamedEntity import NamedEntity
 from drivers.rest.catch_exceptions import catch_exceptions
 from drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
-from drivers.visualize_pdf_named_entities import get_visualization
 from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
 from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
 from use_cases.NamedEntityMergerUseCase import NamedEntityMergerUseCase
