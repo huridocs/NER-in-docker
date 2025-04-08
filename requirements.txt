@@ -1,5 +1,5 @@
 fastapi==0.115.6
-pydantic==2.10.5
+pydantic==2.11.3
 gunicorn==23.0.0
 uvicorn==0.34.0
 flair==0.15.0
