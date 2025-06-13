@@ -10,7 +10,6 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
-
   pdf-layout-analysis-gpu:
     extends:
       file: docker-compose.yml

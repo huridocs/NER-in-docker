@@ -5,12 +5,15 @@ from domain.NamedEntityType import NamedEntityType
 from rapidfuzz import fuzz
 
 from domain.PDFNamedEntity import PDFNamedEntity
+from domain.PDFSegment import PDFSegment
+import re
 
 
 class NamedEntityGroup(BaseModel):
     type: NamedEntityType
     name: str
     named_entities: list[NamedEntity | PDFNamedEntity] = list()
+    pdf_segment: PDFSegment = None
 
     def is_same_type(self, named_entity: NamedEntity) -> bool:
         return self.type == named_entity.type
@@ -123,3 +126,44 @@ class NamedEntityGroup(BaseModel):
             self.name = named_entity.text
 
         self.named_entities.append(named_entity.get_with_normalize_entity_text())
+
+    def get_references_in_text(self, text: str) -> list[tuple[int, int]]:
+        if self.type != NamedEntityType.REFERENCE_DESTINATION:
+            return []
+
+        if self.name.strip() == "" or text.strip() == "":
+            return []
+
+        matches = []
+
+        # Match name as standalone token (surrounded by whitespace or string boundaries)
+        pattern = r"(?<!\S)" + re.escape(self.name) + r"(?!\S)"
+        for match in re.finditer(pattern, text):
+            matches.append((match.start(), match.end()))
+
+        # If name has numeric prefix (e.g., '4. Title'), allow matching on the title part
+        if not matches:
+            prefix_match = re.match(r"^[\d\.;:\-]+\s+(.*)$", self.name)
+            if prefix_match:
+                core_title = prefix_match.group(1)
+                pattern_core = r"(?<!\S)" + re.escape(core_title) + r"(?!\S)"
+                for match in re.finditer(pattern_core, text):
+                    matches.append((match.start(), match.end()))
+
+        # Handle titles with separators like ":", ".", ";", "-", etc.
+        if not matches:
+            separators = [":", ".", ",", "-", ";"]
+            for separator in separators:
+                if separator in self.name:
+                    # Split by the separator and get parts (handling whitespace)
+                    parts = [part.strip() for part in self.name.split(separator, 1)]
+
+                    # Check for any individual part in text (for partial matches)
+                    for part in parts:
+                        if len(part) > 3:  # Only consider significant parts (longer than 3 chars)
+                            pattern_part = r"(?<!\S)" + re.escape(part) + r"(?!\S)"
+                            for match in re.finditer(pattern_part, text):
+                                matches.append((match.start(), match.end()))
+                    break
+
+        return matches

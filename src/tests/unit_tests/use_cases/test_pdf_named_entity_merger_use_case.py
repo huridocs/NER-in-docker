@@ -11,7 +11,7 @@ class InMemoryPDFsGroupNameRepository(PDFsGroupNameRepository):
     def __init__(self):
         self.groups_in_memory = []
 
-    def update_group_names_by_old_groups(self, named_entity_groups: list[NamedEntityGroup]):
+    def update_groups_by_old_groups(self, named_entity_groups: list[NamedEntityGroup]):
         groups_with_in_memory_name = []
         for group in named_entity_groups:
             groups_with_in_memory_name.append(group)
@@ -23,6 +23,9 @@ class InMemoryPDFsGroupNameRepository(PDFsGroupNameRepository):
             self.groups_in_memory.append(group)
 
         return groups_with_in_memory_name
+
+    def get_reference_destinations(self) -> list[NamedEntityGroup]:
+        return []
 
 
 class TestPDFNamedEntityMergerUseCase(TestCase):

@@ -15,10 +15,10 @@ class SegmentResponse(BaseModel):
     @staticmethod
     def from_pdf_named_entity(pdf_named_entity: PDFNamedEntity) -> "SegmentResponse":
         return SegmentResponse(
-            text=pdf_named_entity.segment.text,
-            page_number=pdf_named_entity.segment.page_number,
-            segment_number=pdf_named_entity.segment.segment_number,
+            text=pdf_named_entity.pdf_segment.text,
+            page_number=pdf_named_entity.pdf_segment.page_number,
+            segment_number=pdf_named_entity.pdf_segment.segment_number,
             character_start=pdf_named_entity.character_start,
             character_end=pdf_named_entity.character_end,
-            bounding_box=pdf_named_entity.segment.bounding_box,
+            bounding_box=pdf_named_entity.pdf_segment.bounding_box,
         )

@@ -10,4 +10,4 @@ class PDFNamedEntityMergerUseCase:
 
     def merge(self, named_entities: list[PDFNamedEntity]) -> list[NamedEntityGroup]:
         named_entity_groups = NamedEntityMergerUseCase().merge(named_entities)
-        return self.group_names_repository.update_group_names_by_old_groups(named_entity_groups)
+        return self.group_names_repository.update_groups_by_old_groups(named_entity_groups)

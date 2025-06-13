@@ -2,9 +2,12 @@ import sqlite3
 from pathlib import Path
 
 from adapters.EntityPersistence import EntityPersistence
+from adapters.PersistenceReferenceDestination import PersistenceReferenceDestination
 from configuration import ROOT_PATH
 from domain.NamedEntityGroup import NamedEntityGroup
 from domain.NamedEntityType import NamedEntityType
+from domain.PDFNamedEntity import PDFNamedEntity
+from domain.PDFSegment import PDFSegment
 from ports.PDFsGroupNameRepository import PDFsGroupNameRepository
 
 
@@ -38,7 +41,24 @@ class SQLitePDFsGroupNameRepository(PDFsGroupNameRepository):
             )
         """
         )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS reference_destinations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                page_number INTEGER NOT NULL,
+                segment_number INTEGER NOT NULL,
+                pdf_name TEXT NOT NULL,
+                bounding_box_x1 REAL NOT NULL,
+                bounding_box_y1 REAL NOT NULL,
+                bounding_box_x2 REAL NOT NULL,
+                bounding_box_y2 REAL NOT NULL
+            )
+        """
+        )
+
         connection.commit()
+        connection.close()
 
     def delete_database(self):
         Path(ROOT_PATH, "data", self.database_name).unlink(missing_ok=True)
@@ -62,7 +82,7 @@ class SQLitePDFsGroupNameRepository(PDFsGroupNameRepository):
 
         return False, group
 
-    def update_group_names_by_old_groups(self, old_named_entity_groups: list[NamedEntityGroup]):
+    def update_groups_by_old_groups(self, old_named_entity_groups: list[NamedEntityGroup]):
         new_named_entity_groups = []
         for old_group in old_named_entity_groups:
             group_exists, new_group = self.group_exists_in_database(old_group)
@@ -97,3 +117,19 @@ class SQLitePDFsGroupNameRepository(PDFsGroupNameRepository):
             groups[persistence_entity.group_name].named_entities.append(persistence_entity.to_named_entity())
 
         return list(groups.values())
+
+    def get_reference_destinations(self) -> list[NamedEntityGroup]:
+        connection, cursor = self.get_connection()
+        cursor.execute("SELECT * FROM reference_destinations")
+        rows = cursor.fetchall()
+        reference_groups = []
+        for row in rows:
+            persistence_reference_destination = PersistenceReferenceDestination.from_row(row)
+            group = NamedEntityGroup(
+                name=persistence_reference_destination.title,
+                type=NamedEntityType.REFERENCE_DESTINATION,
+                named_entities=[],
+                pdf_segment=persistence_reference_destination.get_pdf_segment()
+            )
+            reference_groups.append(group)
+        return reference_groups

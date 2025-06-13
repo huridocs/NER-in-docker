@@ -18,6 +18,6 @@ class PDFNamedEntityResponse(BaseModel):
             group_name=group_name,
             type=pdf_named_entity.type,
             text=pdf_named_entity.text,
-            page_number=pdf_named_entity.segment.page_number,
-            segment=SegmentResponse.from_pdf_named_entity(pdf_named_entity),
+            page_number=pdf_named_entity.pdf_segment.page_number,
+            pdf_segment=SegmentResponse.from_pdf_named_entity(pdf_named_entity),
         )

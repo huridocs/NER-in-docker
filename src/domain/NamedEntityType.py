@@ -7,6 +7,8 @@ class NamedEntityType(StrEnum):
     LOCATION = "LOCATION"
     DATE = "DATE"
     LAW = "LAW"
+    REFERENCE_DESTINATION = "REFERENCE_DESTINATION"
+    REFERENCE_POINTER = "REFERENCE_POINTER"
 
     @staticmethod
     def from_flair_type(flair_type: str):

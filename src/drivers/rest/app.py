@@ -42,9 +42,12 @@ async def get_named_entities(text: str = Form(None), file: UploadFile = File(Non
         return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)
 
     pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
-    pdf_path = pdf_content_to_pdf_path(file.file.read())
-    pdf_named_entities = NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository).get_entities(pdf_path, fast)
-
     pdfs_group_names_repository = SQLitePDFsGroupNameRepository()
+    reference_entity_groups = pdfs_group_names_repository.get_reference_destinations()
+    pdf_path = pdf_content_to_pdf_path(file.file.read())
+    pdf_named_entities = NamedEntitiesFromPDFUseCase(pdf_layout_analysis_repository, reference_entity_groups).get_entities(
+        pdf_path, fast
+    )
+
     named_entity_groups = PDFNamedEntityMergerUseCase(pdfs_group_names_repository).merge(pdf_named_entities)
     return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)

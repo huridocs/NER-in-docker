@@ -60,7 +60,7 @@ class TestPersistencePDFsGroupNameRepository(TestCase):
         another_person = PDFNamedEntity(text="Jane Doe", type=NamedEntityType.PERSON)
         other_group = NamedEntityGroup(name="Jane Doe", type=NamedEntityType.PERSON, named_entities=[another_person])
 
-        updated_groups = group_name_repository.update_group_names_by_old_groups([new_person_group, other_group])
+        updated_groups = group_name_repository.update_groups_by_old_groups([new_person_group, other_group])
         self.assertEqual(2, len(updated_groups))
         self.assertEqual("María Diaz Perez", updated_groups[0].name)
         self.assertEqual(2, len(updated_groups[0].named_entities))
