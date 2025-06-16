@@ -52,7 +52,7 @@ class TestNamedEntityGroup(TestCase):
 
     def test_reference_with_colon_title_and_first_part_only(self):
         group = NamedEntityGroup(name="Document 3: Advanced Research", type=NamedEntityType.REFERENCE_DESTINATION)
-        text = 'These granular results expand upon the presented in Document 3'
+        text = "These granular results expand upon the presented in Document 3"
         matches = group.get_references_in_text(text)
         self.assertTrue(len(matches) > 0)
 
@@ -75,6 +75,13 @@ class TestNamedEntityGroup(TestCase):
         )
         matches = group.get_references_in_text(text)
         self.assertTrue(len(matches) > 0)
+
+    def test_reference_for_partial_text_in_quotes(self):
+        group = NamedEntityGroup(name="4. Results Interpretation", type=NamedEntityType.REFERENCE_DESTINATION)
+        text = 'These granular results expand upon the "Results Interpretation" presented in Document 1.'
+
+        self.assertEqual(1, len(group.get_references_in_text(text)))
+        self.assertEqual(1, len(group.get_references_in_text(text.replace('"', "'"))))
 
     def test_multiple_references_to_same_title(self):
         group = NamedEntityGroup(name="Section 2.1", type=NamedEntityType.REFERENCE_DESTINATION)

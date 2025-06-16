@@ -6,12 +6,10 @@ from adapters.PersistenceReferenceDestination import PersistenceReferenceDestina
 from configuration import ROOT_PATH
 from domain.NamedEntityGroup import NamedEntityGroup
 from domain.NamedEntityType import NamedEntityType
-from domain.PDFNamedEntity import PDFNamedEntity
-from domain.PDFSegment import PDFSegment
-from ports.PDFsGroupNameRepository import PDFsGroupNameRepository
+from ports.GroupsStoreRepository import GroupsStoreRepository
 
 
-class SQLitePDFsGroupNameRepository(PDFsGroupNameRepository):
+class SQLiteGroupsStoreRepository(GroupsStoreRepository):
 
     def __init__(self, database_name: str = "named_entities.db"):
         self.database_name = database_name
@@ -49,10 +47,10 @@ class SQLitePDFsGroupNameRepository(PDFsGroupNameRepository):
                 page_number INTEGER NOT NULL,
                 segment_number INTEGER NOT NULL,
                 pdf_name TEXT NOT NULL,
-                bounding_box_x1 REAL NOT NULL,
-                bounding_box_y1 REAL NOT NULL,
-                bounding_box_x2 REAL NOT NULL,
-                bounding_box_y2 REAL NOT NULL
+                left INTEGER NOT NULL,
+                top INTEGER NOT NULL,
+                width INTEGER NOT NULL,
+                height INTEGER NOT NULL
             )
         """
         )
@@ -118,18 +116,59 @@ class SQLitePDFsGroupNameRepository(PDFsGroupNameRepository):
 
         return list(groups.values())
 
-    def get_reference_destinations(self) -> list[NamedEntityGroup]:
-        connection, cursor = self.get_connection()
+    @staticmethod
+    def _fetch_existing_reference_groups(cursor) -> list[NamedEntityGroup]:
         cursor.execute("SELECT * FROM reference_destinations")
         rows = cursor.fetchall()
-        reference_groups = []
+        existing_reference_groups = []
         for row in rows:
             persistence_reference_destination = PersistenceReferenceDestination.from_row(row)
             group = NamedEntityGroup(
                 name=persistence_reference_destination.title,
                 type=NamedEntityType.REFERENCE_DESTINATION,
                 named_entities=[],
-                pdf_segment=persistence_reference_destination.get_pdf_segment()
+                pdf_segment=persistence_reference_destination.get_pdf_segment(),
             )
-            reference_groups.append(group)
-        return reference_groups
+            existing_reference_groups.append(group)
+        return existing_reference_groups
+
+    @staticmethod
+    def _insert_new_reference_destinations(cursor, new_groups_destinations: list[NamedEntityGroup]):
+        for group in new_groups_destinations:
+            if group.pdf_segment:
+                cursor.execute(
+                    """
+                    INSERT INTO reference_destinations (title, page_number, segment_number, pdf_name, left, top, width, height)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        group.name,
+                        group.pdf_segment.page_number,
+                        group.pdf_segment.segment_number,
+                        group.pdf_segment.pdf_name,
+                        group.pdf_segment.bounding_box.left,
+                        group.pdf_segment.bounding_box.top,
+                        group.pdf_segment.bounding_box.width,
+                        group.pdf_segment.bounding_box.height,
+                    ),
+                )
+
+    def update_reference_destinations(self, new_groups_destinations: list[NamedEntityGroup]) -> list[NamedEntityGroup]:
+        connection, cursor = self.get_connection()
+        existing_reference_groups = self._fetch_existing_reference_groups(cursor)
+
+        group_names = {group.name for group in existing_reference_groups}
+        pdf_names = {group.pdf_segment.pdf_name for group in existing_reference_groups if group.pdf_segment}
+        new_groups_destinations = [
+            group
+            for group in new_groups_destinations
+            if group.name not in group_names and group.pdf_segment.pdf_name not in pdf_names
+        ]
+
+        if not new_groups_destinations:
+            return existing_reference_groups
+
+        self._insert_new_reference_destinations(cursor, new_groups_destinations)
+        connection.commit()
+        combined_groups = existing_reference_groups + new_groups_destinations
+        return combined_groups

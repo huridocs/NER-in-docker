@@ -154,10 +154,10 @@ class TestEndToEnd(TestCase):
             files = {"file": pdf_file}
             result = requests.post(self.service_url, files=files)
 
+        self.assertEqual(200, result.status_code)
+
         entities_dict = result.json()["entities"]
         groups_dict = result.json()["groups"]
-
-        self.assertEqual(200, result.status_code)
         self.assertEqual(10, len(entities_dict))
 
         expected_entities = [
@@ -224,62 +224,63 @@ class TestEndToEnd(TestCase):
             self.assertEqual(expected["entities_ids"], group.entities_ids)
             self.assertEqual(expected["entities_text"], group.entities_text)
 
-    # def test_pdf_references(self):
-    #     for document in ["document_1.pdf", "document_2.pdf", "document_3.pdf"]:
-    #         pdf_path: Path = ROOT_PATH / "src" / "tests" / "end_to_end" / "test_pdfs" / document
-    #         with open(pdf_path, "rb") as pdf_file:
-    #             files = {"file": pdf_file}
-    #             result = requests.post(self.service_url, files=files)
-    #
-    #     entities_dict = result.json()["entities"]
-    #     groups_dict = result.json()["groups"]
-    #
-    #     self.assertEqual(200, result.status_code)
-    #     self.assertEqual(10, len(entities_dict))
-    #
-    #     expected_entities = [
-    #         {
-    #             "group_name": "4. Results Interpretation",
-    #             "type": "REFERENCE",
-    #             "text": "Results Interpretation",
-    #             "segment_text": 'These granular results expand upon the "Results Interpretation" presented in Document 1.',
-    #             "page_number": 1,
-    #             "segment_number": 4,
-    #             "character_start": 0,
-    #             "character_end": 0,
-    #             "bounding_box": (0, 0, 0, 0),
-    #         },
-    #     ]
-    #
-    #     for i, expected in enumerate(expected_entities):
-    #         entity = PDFNamedEntityResponse(**entities_dict[i * 9])
-    #         self.assertEqual(expected["group_name"], entity.group_name)
-    #         self.assertEqual(expected["type"], entity.type)
-    #         self.assertEqual(expected["text"], entity.text)
-    #         self.assertEqual(expected["segment_text"], entity.segment.text)
-    #         self.assertEqual(expected["page_number"], entity.segment.page_number)
-    #         self.assertEqual(expected["segment_number"], entity.segment.segment_number)
-    #         self.assertEqual(expected["character_start"], entity.segment.character_start)
-    #         self.assertEqual(expected["character_end"], entity.segment.character_end)
-    #         self.assertIn(expected["bounding_box"][0], self.similar_value(entity.segment.bounding_box.left))
-    #         self.assertIn(expected["bounding_box"][1], self.similar_value(entity.segment.bounding_box.top))
-    #         self.assertIn(expected["bounding_box"][2], self.similar_value(entity.segment.bounding_box.width))
-    #         self.assertIn(expected["bounding_box"][3], self.similar_value(entity.segment.bounding_box.height))
-    #
-    #     self.assertEqual(8, len(groups_dict))
-    #
-    #     expected_groups = [
-    #         {
-    #             "group_name": "4. Results Interpretation",
-    #             "type": "REFERENCE",
-    #             "entities_ids": [0],
-    #             "entities_text": ["Results Interpretation"],
-    #         },
-    #     ]
-    #
-    #     for i, expected in enumerate(expected_groups):
-    #         group = GroupResponse(**groups_dict[i * 7])
-    #         self.assertEqual(expected["group_name"], group.group_name)
-    #         self.assertEqual(expected["type"], group.type)
-    #         self.assertEqual(expected["entities_ids"], group.entities_ids)
-    #         self.assertEqual(expected["entities_text"], group.entities_text)
+    def test_pdf_references(self):
+        for document in ["document_1.pdf", "document_2.pdf", "document_3.pdf"]:
+            pdf_path: Path = ROOT_PATH / "src" / "tests" / "end_to_end" / "test_pdfs" / document
+            with open(pdf_path, "rb") as pdf_file:
+                files = {"file": pdf_file}
+                result = requests.post(self.service_url, files=files)
+
+        self.assertEqual(200, result.status_code)
+
+        entities_dict = result.json()["entities"]
+        groups_dict = result.json()["groups"]
+
+        self.assertEqual(10, len(entities_dict))
+
+        expected_entities = [
+            {
+                "group_name": "4. Results Interpretation",
+                "type": "REFERENCE",
+                "text": "Results Interpretation",
+                "segment_text": 'These granular results expand upon the "Results Interpretation" presented in Document 1.',
+                "page_number": 1,
+                "segment_number": 4,
+                "character_start": 0,
+                "character_end": 0,
+                "bounding_box": (0, 0, 0, 0),
+            },
+        ]
+
+        for i, expected in enumerate(expected_entities):
+            entity = PDFNamedEntityResponse(**entities_dict[i * 9])
+            self.assertEqual(expected["group_name"], entity.group_name)
+            self.assertEqual(expected["type"], entity.type)
+            self.assertEqual(expected["text"], entity.text)
+            self.assertEqual(expected["segment_text"], entity.segment.text)
+            self.assertEqual(expected["page_number"], entity.segment.page_number)
+            self.assertEqual(expected["segment_number"], entity.segment.segment_number)
+            self.assertEqual(expected["character_start"], entity.segment.character_start)
+            self.assertEqual(expected["character_end"], entity.segment.character_end)
+            self.assertIn(expected["bounding_box"][0], self.similar_value(entity.segment.bounding_box.left))
+            self.assertIn(expected["bounding_box"][1], self.similar_value(entity.segment.bounding_box.top))
+            self.assertIn(expected["bounding_box"][2], self.similar_value(entity.segment.bounding_box.width))
+            self.assertIn(expected["bounding_box"][3], self.similar_value(entity.segment.bounding_box.height))
+
+        self.assertEqual(8, len(groups_dict))
+
+        expected_groups = [
+            {
+                "group_name": "4. Results Interpretation",
+                "type": "REFERENCE",
+                "entities_ids": [0],
+                "entities_text": ["Results Interpretation"],
+            },
+        ]
+
+        for i, expected in enumerate(expected_groups):
+            group = GroupResponse(**groups_dict[i * 7])
+            self.assertEqual(expected["group_name"], group.group_name)
+            self.assertEqual(expected["type"], group.type)
+            self.assertEqual(expected["entities_ids"], group.entities_ids)
+            self.assertEqual(expected["entities_text"], group.entities_text)

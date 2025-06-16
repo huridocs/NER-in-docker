@@ -1,5 +1,5 @@
 from unittest import TestCase
-from adapters.SQLitePDFsGroupNameRepository import SQLitePDFsGroupNameRepository
+from adapters.SQLitePDFsGroupNameRepository import SQLiteGroupsStoreRepository
 from domain.NamedEntityGroup import NamedEntityGroup
 from domain.NamedEntityType import NamedEntityType
 from domain.PDFNamedEntity import PDFNamedEntity
@@ -16,7 +16,7 @@ class TestPersistencePDFsGroupNameRepository(TestCase):
             name="María Diaz Perez", type=NamedEntityType.PERSON, named_entities=[entity_1, entity_2]
         )
 
-        sqlite_repository = SQLitePDFsGroupNameRepository(TEST_DATABASE_NAME)
+        sqlite_repository = SQLiteGroupsStoreRepository(TEST_DATABASE_NAME)
         sqlite_repository.delete_database()
         sqlite_repository.save_group(group_to_save)
 
@@ -25,7 +25,7 @@ class TestPersistencePDFsGroupNameRepository(TestCase):
         entity_2 = PDFNamedEntity(text="HURIDOCS", type=NamedEntityType.ORGANIZATION)
         group = NamedEntityGroup(name="HURIDOCS ORG", type=NamedEntityType.ORGANIZATION, named_entities=[entity_1, entity_2])
 
-        sqlite_repository = SQLitePDFsGroupNameRepository(TEST_DATABASE_NAME)
+        sqlite_repository = SQLiteGroupsStoreRepository(TEST_DATABASE_NAME)
         sqlite_repository.save_group(group)
 
         groups_in_database = sqlite_repository.groups_in_database
@@ -48,7 +48,7 @@ class TestPersistencePDFsGroupNameRepository(TestCase):
         self.assertEqual({"HURIDOCS", "HURIDOCS ORG"}, {organization_entities[0].text, organization_entities[1].text})
 
     def test_set_group_names_from_storage(self):
-        group_name_repository = SQLitePDFsGroupNameRepository(TEST_DATABASE_NAME)
+        group_name_repository = SQLiteGroupsStoreRepository(TEST_DATABASE_NAME)
 
         new_entity_1 = PDFNamedEntity(text="María D.", type=NamedEntityType.PERSON)
         new_entity_2 = PDFNamedEntity(text="María Diaz", type=NamedEntityType.PERSON)

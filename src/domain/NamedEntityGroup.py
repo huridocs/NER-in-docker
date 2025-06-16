@@ -131,39 +131,61 @@ class NamedEntityGroup(BaseModel):
         if self.type != NamedEntityType.REFERENCE_DESTINATION:
             return []
 
-        if self.name.strip() == "" or text.strip() == "":
+        original_name = self.name.strip()
+        stripped_text = text.strip()
+
+        if not original_name or not stripped_text:
             return []
+
+        search_patterns = set()
+        search_patterns.add(original_name)
+
+        if ": " in original_name:
+            parts = original_name.split(": ", 1)
+            if len(parts) == 2:
+                part_before_colon = parts[0].strip()
+                part_after_colon = parts[1].strip()
+                if part_before_colon:
+                    search_patterns.add(part_before_colon)
+                if part_after_colon:
+                    search_patterns.add(part_after_colon)
+
+        # Handle titles with a numbered/lettered prefix ending in a dot,
+        # e.g., "4. Results Interpretation" -> adds "Results Interpretation"
+        # The prefix part is like "1.", "A.1.", "IV.", etc.
+        # Regex: ^ (?:non-capturing-prefix-ending-with-dot) \\s+ (capturing-title-part) $
+        dot_prefix_match = re.match(r"^(?:[A-Za-z0-9]+(?:[\.\-][A-ZaZ0-9]+)*[\.\-\,;])\s+(.+)$", original_name)
+        if dot_prefix_match:
+            title_part = dot_prefix_match.group(1).strip()
+            if title_part:
+                search_patterns.add(title_part)
 
         matches = []
 
-        # Match name as standalone token (surrounded by whitespace or string boundaries)
-        pattern = r"(?<!\S)" + re.escape(self.name) + r"(?!\S)"
-        for match in re.finditer(pattern, text):
-            matches.append((match.start(), match.end()))
+        for pattern_text in search_patterns:
+            if not pattern_text:
+                continue
 
-        # If name has numeric prefix (e.g., '4. Title'), allow matching on the title part
+            escaped_pattern = re.escape(pattern_text)
+            # Regex explanation:
+            # (?<![\w.])   : Negative lookbehind - asserts that the match is not preceded by a word character or a dot.
+            # (?:\"|\')?  : Optional non-capturing group for a double or single quote.
+            # escaped_pattern : The actual pattern text, with regex special characters escaped.
+            # (?:\"|\')?  : Optional non-capturing group for a double or single quote.
+            # (?![\w.])    : Negative lookahead - asserts that the match is not followed by a word character or a dot.
+            regex_str = r"(?<![\w.])(?:\"|\')?" + escaped_pattern + r"(?:\"|\')?(?![\w.])"
+
+            try:
+                for match in re.finditer(regex_str, text):  # Use original text for spans
+                    matches.append(match.span())
+            except re.error:
+                # Should not happen with proper escaping and non-empty patterns
+                pass
+
         if not matches:
-            prefix_match = re.match(r"^[\d\.;:\-]+\s+(.*)$", self.name)
-            if prefix_match:
-                core_title = prefix_match.group(1)
-                pattern_core = r"(?<!\S)" + re.escape(core_title) + r"(?!\S)"
-                for match in re.finditer(pattern_core, text):
-                    matches.append((match.start(), match.end()))
+            return []
 
-        # Handle titles with separators like ":", ".", ";", "-", etc.
-        if not matches:
-            separators = [":", ".", ",", "-", ";"]
-            for separator in separators:
-                if separator in self.name:
-                    # Split by the separator and get parts (handling whitespace)
-                    parts = [part.strip() for part in self.name.split(separator, 1)]
+        # Deduplicate and sort matches by their start position
+        unique_matches = sorted(list(set(matches)), key=lambda m: m[0])
 
-                    # Check for any individual part in text (for partial matches)
-                    for part in parts:
-                        if len(part) > 3:  # Only consider significant parts (longer than 3 chars)
-                            pattern_part = r"(?<!\S)" + re.escape(part) + r"(?!\S)"
-                            for match in re.finditer(pattern_part, text):
-                                matches.append((match.start(), match.end()))
-                    break
-
-        return matches
+        return unique_matches

@@ -17,9 +17,7 @@ class NamedEntitiesResponse(BaseModel):
             return
 
         if isinstance(self.entities[0], PDFNamedEntityResponse):
-            self.entities.sort(
-                key=lambda x: (x.pdf_segment.page_number, x.pdf_segment.segment_number, x.pdf_segment.character_start)
-            )
+            self.entities.sort(key=lambda x: (x.segment.page_number, x.segment.segment_number, x.segment.character_start))
         else:
             self.entities.sort(key=lambda x: x.character_start)
 

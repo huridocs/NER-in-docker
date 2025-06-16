@@ -3,11 +3,11 @@ from unittest import TestCase
 from domain.NamedEntityGroup import NamedEntityGroup
 from domain.NamedEntityType import NamedEntityType
 from domain.PDFNamedEntity import PDFNamedEntity
-from ports.PDFsGroupNameRepository import PDFsGroupNameRepository
+from ports.GroupsStoreRepository import GroupsStoreRepository
 from use_cases.PDFNamedEntityMergerUseCase import PDFNamedEntityMergerUseCase
 
 
-class InMemoryPDFsGroupNameRepository(PDFsGroupNameRepository):
+class InMemoryGroupsStoreRepository(GroupsStoreRepository):
     def __init__(self):
         self.groups_in_memory = []
 
@@ -24,7 +24,7 @@ class InMemoryPDFsGroupNameRepository(PDFsGroupNameRepository):
 
         return groups_with_in_memory_name
 
-    def get_reference_destinations(self) -> list[NamedEntityGroup]:
+    def update_reference_destinations(self, _) -> list[NamedEntityGroup]:
         return []
 
 
@@ -33,7 +33,7 @@ class TestPDFNamedEntityMergerUseCase(TestCase):
         name_entity_1 = PDFNamedEntity(type=NamedEntityType.PERSON, text="María Diaz")
         name_entity_2 = PDFNamedEntity(type=NamedEntityType.PERSON, text="María Diaz")
         name_entity_3 = PDFNamedEntity(type=NamedEntityType.PERSON, text="Other Name")
-        in_memory_repository = InMemoryPDFsGroupNameRepository()
+        in_memory_repository = InMemoryGroupsStoreRepository()
         pdf_named_entity_merger_use_case = PDFNamedEntityMergerUseCase(in_memory_repository)
         named_entities_grouped = pdf_named_entity_merger_use_case.merge([name_entity_1, name_entity_2, name_entity_3])
 
@@ -52,7 +52,7 @@ class TestPDFNamedEntityMergerUseCase(TestCase):
         self.assertEqual("Other Name", named_entities_grouped[1].named_entities[0].text)
 
     def test_merge_entities_using_previous_pdfs(self):
-        in_memory_repository = InMemoryPDFsGroupNameRepository()
+        in_memory_repository = InMemoryGroupsStoreRepository()
         pdf_named_entity_merger_use_case = PDFNamedEntityMergerUseCase(in_memory_repository)
 
         name_entity_1 = PDFNamedEntity(type=NamedEntityType.PERSON, text="María Diaz Perez")
