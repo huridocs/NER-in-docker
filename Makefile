@@ -23,6 +23,9 @@ remove_docker_containers:
 remove_docker_images:
 	docker compose config --images | xargs docker rmi
 
+download_models:
+	. .venv/bin/activate; command python src/download_models.py
+
 start:
 ifeq ($(OS), Windows_NT)
 	if not exist models mkdir models
