@@ -233,54 +233,213 @@ class TestEndToEnd(TestCase):
 
         self.assertEqual(200, result.status_code)
 
-        entities_dict = result.json()["entities"]
-        groups_dict = result.json()["groups"]
+        entities_dict = [x for x in result.json()["entities"] if x["type"] == NamedEntityType.REFERENCE_POINTER]
+        groups_dict = [x for x in result.json()["groups"] if x["type"] == NamedEntityType.REFERENCE_DESTINATION]
 
-        self.assertEqual(10, len(entities_dict))
+        self.assertEqual(6, len(entities_dict))
 
         expected_entities = [
             {
                 "group_name": "4. Results Interpretation",
-                "type": "REFERENCE",
-                "text": "Results Interpretation",
-                "segment_text": 'These granular results expand upon the "Results Interpretation" presented in Document 1.',
                 "page_number": 1,
-                "segment_number": 4,
-                "character_start": 0,
-                "character_end": 0,
-                "bounding_box": (0, 0, 0, 0),
+                "segment": {
+                    "bounding_box": {"height": 11, "left": 72, "top": 234, "width": 436},
+                    "character_end": 63,
+                    "character_start": 39,
+                    "page_number": 1,
+                    "pdf_name": "document_3.pdf",
+                    "segment_number": 4,
+                    "text": 'These granular results expand upon the "Results Interpretation" presented in Document 1.',
+                },
+                "text": '"Results Interpretation"',
+                "type": "REFERENCE_POINTER",
+            },
+            {
+                "group_name": "3. Phase 2: Analysis",
+                "page_number": 1,
+                "segment": {
+                    "bounding_box": {"height": 26, "left": 72, "top": 357, "width": 444},
+                    "character_end": 68,
+                    "character_start": 59,
+                    "page_number": 1,
+                    "pdf_name": "document_3.pdf",
+                    "segment_number": 7,
+                    "text": 'The capabilities of these algorithms build directly on the "Analysis Techniques" discussed in Document 2.',
+                },
+                "text": '"Analysis',
+                "type": "REFERENCE_POINTER",
+            },
+            {
+                "group_name": "3. Analysis Techniques",
+                "page_number": 1,
+                "segment": {
+                    "bounding_box": {"height": 26, "left": 72, "top": 357, "width": 444},
+                    "character_end": 80,
+                    "character_start": 59,
+                    "page_number": 1,
+                    "pdf_name": "document_3.pdf",
+                    "segment_number": 7,
+                    "text": 'The capabilities of these algorithms build directly on the "Analysis Techniques" discussed in Document 2.',
+                },
+                "text": '"Analysis Techniques"',
+                "type": "REFERENCE_POINTER",
+            },
+            {
+                "group_name": "Document 1: Project Overview",
+                "page_number": 1,
+                "segment": {
+                    "bounding_box": {"height": 41, "left": 72, "top": 494, "width": 439},
+                    "character_end": 72,
+                    "character_start": 54,
+                    "page_number": 1,
+                    "pdf_name": "document_3.pdf",
+                    "segment_number": 10,
+                    "text": 'The overall context for this work can be found in the "Project Overview" (Document 1). The findings presented in "Detailed Findings" within this document will guide our subsequent research directions.',
+                },
+                "text": '"Project Overview"',
+                "type": "REFERENCE_POINTER",
+            },
+            {
+                "group_name": "Document 1: Project Overview",
+                "page_number": 1,
+                "segment": {
+                    "bounding_box": {"height": 41, "left": 72, "top": 494, "width": 439},
+                    "character_end": 84,
+                    "character_start": 74,
+                    "page_number": 1,
+                    "pdf_name": "document_3.pdf",
+                    "segment_number": 10,
+                    "text": 'The overall context for this work can be found in the "Project Overview" (Document 1). The findings presented in "Detailed Findings" within this document will guide our subsequent research directions.',
+                },
+                "text": "Document 1",
+                "type": "REFERENCE_POINTER",
+            },
+            {
+                "group_name": "1. Detailed Findings",
+                "page_number": 1,
+                "segment": {
+                    "bounding_box": {"height": 41, "left": 72, "top": 494, "width": 439},
+                    "character_end": 132,
+                    "character_start": 113,
+                    "page_number": 1,
+                    "pdf_name": "document_3.pdf",
+                    "segment_number": 10,
+                    "text": 'The overall context for this work can be found in the "Project Overview" (Document 1). The findings presented in "Detailed Findings" within this document will guide our subsequent research directions.',
+                },
+                "text": '"Detailed Findings"',
+                "type": "REFERENCE_POINTER",
             },
         ]
 
         for i, expected in enumerate(expected_entities):
-            entity = PDFNamedEntityResponse(**entities_dict[i * 9])
-            self.assertEqual(expected["group_name"], entity.group_name)
-            self.assertEqual(expected["type"], entity.type)
-            self.assertEqual(expected["text"], entity.text)
-            self.assertEqual(expected["segment_text"], entity.segment.text)
-            self.assertEqual(expected["page_number"], entity.segment.page_number)
-            self.assertEqual(expected["segment_number"], entity.segment.segment_number)
-            self.assertEqual(expected["character_start"], entity.segment.character_start)
-            self.assertEqual(expected["character_end"], entity.segment.character_end)
-            self.assertIn(expected["bounding_box"][0], self.similar_value(entity.segment.bounding_box.left))
-            self.assertIn(expected["bounding_box"][1], self.similar_value(entity.segment.bounding_box.top))
-            self.assertIn(expected["bounding_box"][2], self.similar_value(entity.segment.bounding_box.width))
-            self.assertIn(expected["bounding_box"][3], self.similar_value(entity.segment.bounding_box.height))
-
-        self.assertEqual(8, len(groups_dict))
+            entity = entities_dict[i]
+            self.assertEqual(expected["group_name"], entity["group_name"])
+            self.assertEqual(expected["page_number"], entity["page_number"])
+            self.assertEqual(expected["text"], entity["text"])
+            self.assertEqual(expected["type"], entity["type"])
+            # Segment checks
+            self.assertEqual(expected["segment"]["text"], entity["segment"]["text"])
+            self.assertEqual(expected["segment"]["page_number"], entity["segment"]["page_number"])
+            self.assertEqual(expected["segment"]["segment_number"], entity["segment"]["segment_number"])
+            self.assertEqual(expected["segment"]["character_start"], entity["segment"]["character_start"])
+            self.assertEqual(expected["segment"]["character_end"], entity["segment"]["character_end"])
+            self.assertEqual(expected["segment"]["pdf_name"], entity["segment"]["pdf_name"])
+            # Bounding box checks
+            for key in ["left", "top", "width", "height"]:
+                self.assertEqual(expected["segment"]["bounding_box"][key], entity["segment"]["bounding_box"][key])
 
         expected_groups = [
             {
+                "entities_ids": [5, 6],
+                "entities_text": ['"Project Overview"', "Document 1"],
+                "group_name": "Document 1: Project Overview",
+                "segment": {
+                    "bounding_box": {"height": 25, "left": 72, "top": 97, "width": 333},
+                    "character_end": 28,
+                    "character_start": 0,
+                    "page_number": 1,
+                    "pdf_name": "document_1.pdf",
+                    "segment_number": 1,
+                    "text": "Document 1: Project Overview",
+                },
+                "type": "REFERENCE_DESTINATION",
+            },
+            {
+                "entities_ids": [2],
+                "entities_text": ['"Analysis'],
+                "group_name": "3. Phase 2: Analysis",
+                "segment": {
+                    "bounding_box": {"height": 17, "left": 72, "top": 406, "width": 162},
+                    "character_end": 20,
+                    "character_start": 0,
+                    "page_number": 1,
+                    "pdf_name": "document_1.pdf",
+                    "segment_number": 8,
+                    "text": "3. Phase 2: Analysis",
+                },
+                "type": "REFERENCE_DESTINATION",
+            },
+            {
+                "entities_ids": [1],
+                "entities_text": ['"Results Interpretation"'],
                 "group_name": "4. Results Interpretation",
-                "type": "REFERENCE",
-                "entities_ids": [0],
-                "entities_text": ["Results Interpretation"],
+                "segment": {
+                    "bounding_box": {"height": 17, "left": 71, "top": 557, "width": 195},
+                    "character_end": 25,
+                    "character_start": 0,
+                    "page_number": 1,
+                    "pdf_name": "document_1.pdf",
+                    "segment_number": 11,
+                    "text": "4. Results Interpretation",
+                },
+                "type": "REFERENCE_DESTINATION",
+            },
+            {
+                "entities_ids": [3],
+                "entities_text": ['"Analysis Techniques"'],
+                "group_name": "3. Analysis Techniques",
+                "segment": {
+                    "bounding_box": {"height": 17, "left": 71, "top": 406, "width": 186},
+                    "character_end": 22,
+                    "character_start": 0,
+                    "page_number": 1,
+                    "pdf_name": "document_2.pdf",
+                    "segment_number": 8,
+                    "text": "3. Analysis Techniques",
+                },
+                "type": "REFERENCE_DESTINATION",
+            },
+            {
+                "entities_ids": [7],
+                "entities_text": ['"Detailed Findings"'],
+                "group_name": "1. Detailed Findings",
+                "segment": {
+                    "bounding_box": {"height": 18, "left": 71, "top": 145, "width": 160},
+                    "character_end": 20,
+                    "character_start": 0,
+                    "page_number": 1,
+                    "pdf_name": "document_3.pdf",
+                    "segment_number": 2,
+                    "text": "1. Detailed Findings",
+                },
+                "type": "REFERENCE_DESTINATION",
             },
         ]
 
+        self.assertEqual(len(expected_groups), len(groups_dict))
         for i, expected in enumerate(expected_groups):
-            group = GroupResponse(**groups_dict[i * 7])
-            self.assertEqual(expected["group_name"], group.group_name)
-            self.assertEqual(expected["type"], group.type)
-            self.assertEqual(expected["entities_ids"], group.entities_ids)
-            self.assertEqual(expected["entities_text"], group.entities_text)
+            group = groups_dict[i]
+            self.assertEqual(expected["group_name"], group["group_name"])
+            self.assertEqual(expected["type"], group["type"])
+            self.assertEqual(expected["entities_ids"], group["entities_ids"])
+            self.assertEqual(expected["entities_text"], group["entities_text"])
+            # Segment checks
+            self.assertEqual(expected["segment"]["text"], group["segment"]["text"])
+            self.assertEqual(expected["segment"]["page_number"], group["segment"]["page_number"])
+            self.assertEqual(expected["segment"]["segment_number"], group["segment"]["segment_number"])
+            self.assertEqual(expected["segment"]["character_start"], group["segment"]["character_start"])
+            self.assertEqual(expected["segment"]["character_end"], group["segment"]["character_end"])
+            self.assertEqual(expected["segment"]["pdf_name"], group["segment"]["pdf_name"])
+            # Bounding box checks
+            for key in ["left", "top", "width", "height"]:
+                self.assertEqual(expected["segment"]["bounding_box"][key], group["segment"]["bounding_box"][key])

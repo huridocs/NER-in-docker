@@ -49,7 +49,7 @@ class NamedEntitiesFromPDFUseCase:
             reference_entities.extend(reference_entities_from_pdf_use_case.get_entities(pdf_segment))
 
         for reference_entity in reference_entities:
-            self.reference_destinations_groups[reference_entity.text].named_entities.append(reference_entity)
+            self.reference_destinations_groups[reference_entity.group_name].named_entities.append(reference_entity)
 
         return [group for group in self.reference_destinations_groups.values() if group.named_entities]
 

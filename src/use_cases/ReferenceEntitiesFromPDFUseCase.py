@@ -20,10 +20,10 @@ class ReferenceEntitiesFromPDFUseCase:
             for character_start, character_end in positions:
                 entity = NamedEntity(
                     type=NamedEntityType.REFERENCE_POINTER,
-                    text=group.name,
+                    text=pdf_segment.text[character_start:character_end],
                     character_start=character_start,
                     character_end=character_end,
                 )
-                entities.append(PDFNamedEntity.from_pdf_segment(entity, pdf_segment))
+                entities.append(PDFNamedEntity.from_pdf_segment(entity, pdf_segment, group.name))
 
         return entities

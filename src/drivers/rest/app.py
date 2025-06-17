@@ -17,13 +17,9 @@ from use_cases.PDFNamedEntityMergerUseCase import PDFNamedEntityMergerUseCase
 app = FastAPI()
 
 
-def get_file_path(file_name, extension) -> Path:
-    return Path(tempfile.gettempdir(), file_name + "." + extension)
-
-
-def pdf_content_to_pdf_path(file_content) -> Path:
-    file_id = str(uuid.uuid1())
-    pdf_path = Path(get_file_path(file_id, "pdf"))
+def pdf_content_to_pdf_path(file_content, file_name: str = None) -> Path:
+    file_name = file_name if file_name else str(uuid.uuid1()) + ".pdf"
+    pdf_path = Path(tempfile.gettempdir()) / file_name
     pdf_path.write_bytes(file_content)
     return pdf_path
 
@@ -47,7 +43,7 @@ async def get_named_entities(text: str = Form(None), fast: bool = Form(False), f
         pdf_layout_analysis_repository, pdfs_group_names_repository
     )
 
-    pdf_path = pdf_content_to_pdf_path(await file.read())
+    pdf_path = pdf_content_to_pdf_path(await file.read(), file.filename)
     pdf_named_entities = named_entities_from_pdf_use_case.get_entities(pdf_path, fast)
     named_entity_groups = PDFNamedEntityMergerUseCase(pdfs_group_names_repository).merge(pdf_named_entities)
     named_entity_groups.extend(named_entities_from_pdf_use_case.get_reference_groups())
