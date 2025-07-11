@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from domain.BoundingBox import BoundingBox
 from domain.NamedEntityGroup import NamedEntityGroup
-from domain.PDFNamedEntity import PDFNamedEntity
+from domain.NamedEntity import NamedEntity
 
 
 class SegmentResponse(BaseModel):
@@ -15,35 +15,35 @@ class SegmentResponse(BaseModel):
     pdf_name: str = ""
 
     @staticmethod
-    def from_pdf_named_entity(pdf_named_entity: PDFNamedEntity) -> "SegmentResponse":
+    def from_named_entity(named_entity: NamedEntity) -> "SegmentResponse":
         return SegmentResponse(
-            text=pdf_named_entity.pdf_segment.text,
-            page_number=pdf_named_entity.pdf_segment.page_number,
-            segment_number=pdf_named_entity.pdf_segment.segment_number,
-            character_start=pdf_named_entity.character_start,
-            character_end=pdf_named_entity.character_end,
-            bounding_box=pdf_named_entity.pdf_segment.bounding_box,
-            pdf_name=pdf_named_entity.pdf_segment.pdf_name if pdf_named_entity.pdf_segment else "",
+            text=named_entity.segment.text,
+            page_number=named_entity.segment.page_number,
+            segment_number=named_entity.segment.segment_number,
+            character_start=named_entity.character_start,
+            character_end=named_entity.character_end,
+            bounding_box=named_entity.segment.bounding_box,
+            pdf_name=named_entity.segment.source_id,
         )
 
     @staticmethod
     def from_named_entity_group(named_entity_group: NamedEntityGroup) -> "SegmentResponse | None":
-        if not named_entity_group.pdf_segment:
+        if not named_entity_group.segment:
             return None
 
-        if named_entity_group.name in named_entity_group.pdf_segment.text:
-            character_start = named_entity_group.pdf_segment.text.index(named_entity_group.name)
+        if named_entity_group.name in named_entity_group.segment.text:
+            character_start = named_entity_group.segment.text.index(named_entity_group.name)
             character_end = character_start + len(named_entity_group.name)
         else:
             character_start = 0
             character_end = 0
 
         return SegmentResponse(
-            text=named_entity_group.pdf_segment.text,
-            page_number=named_entity_group.pdf_segment.page_number,
-            segment_number=named_entity_group.pdf_segment.segment_number,
+            text=named_entity_group.segment.text,
+            page_number=named_entity_group.segment.page_number,
+            segment_number=named_entity_group.segment.segment_number,
             character_start=character_start,
             character_end=character_end,
-            bounding_box=named_entity_group.pdf_segment.bounding_box,
-            pdf_name=named_entity_group.pdf_segment.pdf_name,
+            bounding_box=named_entity_group.segment.bounding_box,
+            pdf_name=named_entity_group.segment.source_id,
         )

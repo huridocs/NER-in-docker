@@ -2,17 +2,15 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
-from fastapi import FastAPI, Form, UploadFile, File, HTTPException
+from fastapi import FastAPI, Form, UploadFile, File
 from adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
-from adapters.SQLitePDFsGroupNameRepository import SQLiteGroupsStoreRepository
-from domain.NamedEntity import NamedEntity
+from adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
+from domain.Segment import Segment
 from drivers.rest.catch_exceptions import catch_exceptions
 from drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
-from use_cases.NamedEntitiesFromPDFUseCase import NamedEntitiesFromPDFUseCase
-from use_cases.NamedEntitiesFromTextUseCase import NamedEntitiesFromTextUseCase
-from use_cases.NamedEntityMergerUseCase import NamedEntityMergerUseCase
-from use_cases.PDFNamedEntityMergerUseCase import PDFNamedEntityMergerUseCase
-
+from use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
+from use_cases.NamedEntitiesUseCase import NamedEntitiesUseCase
+from use_cases.ReferencesUseCase import ReferencesUseCase
 
 app = FastAPI()
 
@@ -31,21 +29,26 @@ async def info():
 
 @app.post("/")
 @catch_exceptions
-async def get_named_entities(text: str = Form(None), fast: bool = Form(False), file: UploadFile = File(None)):
-    if not file:
-        named_entities: list[NamedEntity] = NamedEntitiesFromTextUseCase().get_entities(text)
-        named_entity_groups = NamedEntityMergerUseCase().merge(named_entities)
-        return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)
+async def get_named_entities(
+    namespace: str = Form(None),
+    identifier: str = Form(None),
+    text: str = Form(None),
+    file: UploadFile = File(None),
+    fast: bool = Form(False),
+):
+    if file:
+        pdf_path = pdf_content_to_pdf_path(await file.read(), file.filename)
+        segments = PDFLayoutAnalysisRepository().get_segments(pdf_path, fast)
+    else:
+        segments = [Segment.from_text(text=text if text else "", source_id=identifier)]
 
-    pdf_layout_analysis_repository = PDFLayoutAnalysisRepository()
-    pdfs_group_names_repository = SQLiteGroupsStoreRepository()
-    named_entities_from_pdf_use_case = NamedEntitiesFromPDFUseCase(
-        pdf_layout_analysis_repository, pdfs_group_names_repository
-    )
+    entities_from_db = SQLiteEntitiesStoreRepository(namespace).get_entities() if namespace else list()
 
-    pdf_path = pdf_content_to_pdf_path(await file.read(), file.filename)
-    pdf_named_entities = named_entities_from_pdf_use_case.get_entities(pdf_path, fast)
-    named_entity_groups = PDFNamedEntityMergerUseCase(pdfs_group_names_repository).merge(pdf_named_entities)
-    named_entity_groups.extend(named_entities_from_pdf_use_case.get_reference_groups())
+    named_entities = NamedEntitiesUseCase().get_entities_from_segments(segments)
+    named_entities += ReferencesUseCase(entities_from_db).get_entities_from_segments(segments)
+    named_entities_groups = GroupNamedEntitiesUseCase(entities_from_db).group(named_entities)
 
-    return NamedEntitiesResponse.from_named_entity_groups(named_entity_groups)
+    if namespace:
+        SQLiteEntitiesStoreRepository(namespace).save_entities(named_entities)
+
+    return NamedEntitiesResponse.from_groups(named_entities_groups)

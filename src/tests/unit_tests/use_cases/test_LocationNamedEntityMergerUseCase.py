@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
-from use_cases.NamedEntityMergerUseCase import NamedEntityMergerUseCase
+from use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
 
 
 class TestLocationNamedEntityMergerUseCase(TestCase):
@@ -15,7 +15,7 @@ class TestLocationNamedEntityMergerUseCase(TestCase):
         location_entities += [NamedEntity(type=NamedEntityType.LOCATION, text="Spain")]
         location_entities += [NamedEntity(type=NamedEntityType.LOCATION, text="ES")]
 
-        locations_grouped = NamedEntityMergerUseCase().merge(location_entities)
+        locations_grouped = GroupNamedEntitiesUseCase().group(location_entities)
 
         self.assertEqual(2, len(locations_grouped))
 
@@ -40,7 +40,7 @@ class TestLocationNamedEntityMergerUseCase(TestCase):
         location_entities += [NamedEntity(type=NamedEntityType.LOCATION, text="Mérida")]
         location_entities += [NamedEntity(type=NamedEntityType.LOCATION, text="merida")]
 
-        locations_grouped = NamedEntityMergerUseCase().merge(location_entities)
+        locations_grouped = GroupNamedEntitiesUseCase().group(location_entities)
 
         self.assertEqual(2, len(locations_grouped))
 

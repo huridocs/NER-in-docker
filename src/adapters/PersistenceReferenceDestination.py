@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from domain.BoundingBox import BoundingBox
-from domain.PDFSegment import PDFSegment
+from domain.Segment import Segment
 
 
 @dataclass
@@ -30,12 +30,12 @@ class PersistenceReferenceDestination:
             height=row[8],
         )
 
-    def get_pdf_segment(self) -> PDFSegment:
+    def get_segment(self) -> Segment:
         bounding_box = BoundingBox(left=self.left, top=self.top, width=self.width, height=self.height)
-        return PDFSegment(
+        return Segment(
             text=self.title,
             page_number=self.page_number,
             bounding_box=bounding_box,
-            pdf_name=self.pdf_name,
+            source_id=self.pdf_name,
             segment_number=self.segment_number,
         )

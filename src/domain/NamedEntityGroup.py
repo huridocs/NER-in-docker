@@ -1,19 +1,16 @@
 from pydantic import BaseModel
-
-from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
 from rapidfuzz import fuzz
 
-from domain.PDFNamedEntity import PDFNamedEntity
-from domain.PDFSegment import PDFSegment
+from domain.NamedEntity import NamedEntity
 import re
 
 
 class NamedEntityGroup(BaseModel):
     type: NamedEntityType
     name: str
-    named_entities: list[NamedEntity | PDFNamedEntity] = list()
-    pdf_segment: PDFSegment = None
+    named_entities: list[NamedEntity] = list()
+    top_relevance_entity: NamedEntity = None
 
     def is_same_type(self, named_entity: NamedEntity) -> bool:
         return self.type == named_entity.type
@@ -26,15 +23,15 @@ class NamedEntityGroup(BaseModel):
         entity_normalized_text = normalized_entity.normalized_text
 
         for each_normalized_text in [x.normalized_text for x in self.named_entities]:
+            if self.type in [NamedEntityType.LOCATION, NamedEntityType.PERSON, NamedEntityType.ORGANIZATION]:
+                if entity_normalized_text in each_normalized_text or each_normalized_text in entity_normalized_text:
+                    return True
             if self.equal_but_less_words(entity_normalized_text, each_normalized_text):
                 return True
-
             if self.similar_text(each_normalized_text, entity_normalized_text):
                 return True
-
             if self.is_abbreviation(each_normalized_text, entity_normalized_text):
                 return True
-
         return False
 
     @staticmethod
@@ -98,13 +95,11 @@ class NamedEntityGroup(BaseModel):
         return fuzz.ratio(text, other_text) >= threshold
 
     def belongs_to_group(self, named_entity: NamedEntity) -> bool:
-        if not self.is_same_type(named_entity):
-            return False
-
-        if self.is_exact_match(named_entity):
-            return True
-
-        return self.is_similar_entity(named_entity)
+        # Use similarity logic for PERSON, LOCATION, ORGANIZATION
+        if self.type in [NamedEntityType.PERSON, NamedEntityType.LOCATION, NamedEntityType.ORGANIZATION]:
+            return self.is_similar_entity(named_entity)
+        # Fallback to exact match for other types
+        return self.is_exact_match(named_entity)
 
     def is_same_group(self, other_group: "NamedEntityGroup") -> bool:
         if self.type != other_group.type:
@@ -128,7 +123,7 @@ class NamedEntityGroup(BaseModel):
         self.named_entities.append(named_entity.get_with_normalize_entity_text())
 
     def get_references_in_text(self, text: str) -> list[tuple[int, int]]:
-        if self.type != NamedEntityType.REFERENCE_DESTINATION:
+        if self.type != NamedEntityType.REFERENCE:
             return []
 
         original_name = self.name.strip()
@@ -189,3 +184,19 @@ class NamedEntityGroup(BaseModel):
         unique_matches = sorted(list(set(matches)), key=lambda m: m[0])
 
         return unique_matches
+
+    @staticmethod
+    def named_entities_to_groups(named_entities: list[NamedEntity]) -> list["NamedEntityGroup"]:
+        if not named_entities:
+            return []
+
+        groups = []
+        for entity in named_entities:
+            if not groups or not groups[-1].is_same_group(entity):
+                new_group = NamedEntityGroup(type=entity.type, name=entity.normalized_text)
+                new_group.add_named_entity(entity)
+                groups.append(new_group)
+            else:
+                groups[-1].add_named_entity(entity)
+
+        return groups
