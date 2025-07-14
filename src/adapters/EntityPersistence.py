@@ -13,11 +13,12 @@ class EntityPersistence(BaseModel):
     normalized_text: str = ""
     character_start: int = 0
     character_end: int = 0
+    relevance_percentage: int = 0
     segment_text: Optional[str] = None
     segment_page_number: Optional[int] = None
     segment_segment_number: Optional[int] = None
     segment_type: str = "Text"
-    segment_pdf_name: Optional[str] = None
+    segment_source_id: Optional[str] = None
     segment_bounding_box_left: Optional[int] = None
     segment_bounding_box_top: Optional[int] = None
     segment_bounding_box_width: Optional[int] = None
@@ -33,7 +34,7 @@ class EntityPersistence(BaseModel):
             page_number=self.segment_page_number if self.segment_segment_number else 0,
             segment_number=self.segment_segment_number if self.segment_segment_number else 0,
             type=self.segment_type,
-            source_id=self.segment_pdf_name if self.segment_pdf_name else "",
+            source_id=self.segment_source_id if self.segment_source_id else "",
             bounding_box=BoundingBox(
                 left=self.segment_bounding_box_left if self.segment_bounding_box_left else 0,
                 top=self.segment_bounding_box_top if self.segment_bounding_box_top else 0,
@@ -54,13 +55,13 @@ class EntityPersistence(BaseModel):
             percentage_to_segment_text=self.percentage_to_segment_text,
             first_type_appearance=self.first_type_appearance,
             last_type_appearance=self.last_type_appearance,
+            relevance_percentage=self.relevance_percentage,
         )
 
     @staticmethod
     def from_row(row):
-        # row: (id, type, text, normalized_text, character_start, character_end, group_name, segment_text, segment_page_number, segment_segment_number, segment_type, segment_pdf_name, segment_bounding_box_left, segment_bounding_box_top, segment_bounding_box_width, segment_bounding_box_height, appearance_count, percentage_to_segment_text, first_type_appearance, last_type_appearance)
         return EntityPersistence(
-            type=row[1],
+            type=NamedEntityType(row[1]),
             text=row[2],
             normalized_text=row[3],
             character_start=row[4],
@@ -70,7 +71,7 @@ class EntityPersistence(BaseModel):
             segment_page_number=row[8],
             segment_segment_number=row[9],
             segment_type=row[10],
-            segment_pdf_name=row[11],
+            segment_source_id=row[11],
             segment_bounding_box_left=row[12],
             segment_bounding_box_top=row[13],
             segment_bounding_box_width=row[14],
@@ -79,6 +80,7 @@ class EntityPersistence(BaseModel):
             percentage_to_segment_text=row[17],
             first_type_appearance=bool(row[18]),
             last_type_appearance=bool(row[19]),
+            relevance_percentage=row[20],
         )
 
     @staticmethod
@@ -95,7 +97,7 @@ class EntityPersistence(BaseModel):
             segment_page_number=segment.page_number if segment else None,
             segment_segment_number=segment.segment_number if segment else None,
             segment_type=segment.type if segment else "Text",
-            segment_pdf_name=segment.source_id if segment else None,
+            segment_source_id=segment.source_id if segment else None,
             segment_bounding_box_left=segment.bounding_box.left if segment and segment.bounding_box else None,
             segment_bounding_box_top=segment.bounding_box.top if segment and segment.bounding_box else None,
             segment_bounding_box_width=segment.bounding_box.width if segment and segment.bounding_box else None,
@@ -104,4 +106,5 @@ class EntityPersistence(BaseModel):
             percentage_to_segment_text=named_entity.percentage_to_segment_text,
             first_type_appearance=named_entity.first_type_appearance,
             last_type_appearance=named_entity.last_type_appearance,
+            relevance_percentage=named_entity.relevance_percentage,
         )

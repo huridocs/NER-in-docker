@@ -6,6 +6,7 @@ from domain.BoundingBox import BoundingBox
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
 from domain.Segment import Segment
+from domain.TokenType import TokenType
 from use_cases.ReferencesUseCase import ReferencesUseCase
 
 TEST_DATABASE_NAME = "test_pdf_use_case.db"
@@ -156,3 +157,29 @@ class TestReferencesUseCase(TestCase):
         self.assertEqual(22, entities[1].segment.page_number)
         self.assertEqual(20, entities[1].segment.bounding_box.left)
         self.assertEqual("referencing Section 1 and Section 2", entities[1].segment.text)
+
+    def test_avoid_same_word_two_references(self):
+        text = 'The capabilities of these algorithms build directly on the "Analysis Techniques" discussed'
+        named_entities_destination = [
+            NamedEntity(
+                type=NamedEntityType.REFERENCE,
+                text="3. Phase 2: Analysis",
+                character_start=0,
+                character_end=len("Analysis Techniques"),
+                segment=Segment.from_text(text=text),
+                relevance_percentage=100,
+                segment_type=TokenType.TITLE,
+            ),
+            NamedEntity(
+                type=NamedEntityType.REFERENCE,
+                text="3. Analysis Techniques",
+                character_start=0,
+                character_end=len("Analysis"),
+                segment=Segment.from_text(text=text),
+                relevance_percentage=100,
+                segment_type=TokenType.TITLE,
+            ),
+        ]
+        entities = ReferencesUseCase(named_entities_destination).get_entities(Segment.from_text(text=text))
+        self.assertEqual(1, len(entities))
+        self.assertEqual('"Analysis Techniques"', entities[0].text)

@@ -36,10 +36,10 @@ else
 endif
 ifeq ($(HAS_GPU), 1)
 	@echo "NVIDIA GPU detected, using docker-compose-gpu.yml"
-	docker compose -f docker-compose-gpu.yml up --build
+	docker compose -f docker-compose-gpu.yml up --build --attach ner-gpu
 else
 	@echo "No NVIDIA GPU detected, using docker-compose.yml"
-	docker compose -f docker-compose.yml up --build
+	docker compose -f docker-compose.yml up --build --attach ner
 endif
 
 start_no_gpu:

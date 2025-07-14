@@ -39,7 +39,7 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
                 segment_page_number INTEGER,
                 segment_segment_number INTEGER,
                 segment_type TEXT,
-                segment_pdf_name TEXT,
+                segment_source_id TEXT,
                 segment_bounding_box_left INTEGER,
                 segment_bounding_box_top INTEGER,
                 segment_bounding_box_width INTEGER,
@@ -47,11 +47,11 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
                 appearance_count INTEGER,
                 percentage_to_segment_text INTEGER,
                 first_type_appearance BOOLEAN,
-                last_type_appearance BOOLEAN
+                last_type_appearance BOOLEAN,
+                relevance_percentage INTEGER
             )
             """
         )
-
         connection.commit()
         connection.close()
 
@@ -74,16 +74,23 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
             self.create_database()
         try:
             connection, cursor = self.get_connection()
+            source_ids = set(entity.segment.source_id for entity in named_entities)
+            cursor.execute(
+                "DELETE FROM named_entities WHERE segment_source_id IN ({})".format(", ".join("?" for _ in source_ids)),
+                tuple(source_ids),
+            )
+            connection.commit()
+
             for entity in named_entities:
                 persistence = EntityPersistence.from_named_entity(entity)
                 cursor.execute(
                     """
                     INSERT INTO named_entities (
                         type, text, normalized_text, character_start, character_end, group_name,
-                        segment_text, segment_page_number, segment_segment_number, segment_type, segment_pdf_name,
+                        segment_text, segment_page_number, segment_segment_number, segment_type, segment_source_id,
                         segment_bounding_box_left, segment_bounding_box_top, segment_bounding_box_width, segment_bounding_box_height,
-                        appearance_count, percentage_to_segment_text, first_type_appearance, last_type_appearance
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        appearance_count, percentage_to_segment_text, first_type_appearance, last_type_appearance, relevance_percentage
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         str(persistence.type),
@@ -96,7 +103,7 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
                         persistence.segment_page_number,
                         persistence.segment_segment_number,
                         persistence.segment_type,
-                        persistence.segment_pdf_name,
+                        persistence.segment_source_id,
                         persistence.segment_bounding_box_left,
                         persistence.segment_bounding_box_top,
                         persistence.segment_bounding_box_width,
@@ -105,6 +112,7 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
                         persistence.percentage_to_segment_text,
                         int(persistence.first_type_appearance),
                         int(persistence.last_type_appearance),
+                        persistence.relevance_percentage,
                     ),
                 )
             connection.commit()

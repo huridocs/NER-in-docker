@@ -22,14 +22,17 @@ class TestGroupNamedEntitiesUseCase(TestCase):
         self.assertCountEqual([ne.text for ne in group.named_entities], ["1 Jan 2021", "2021-01-01"])
 
     def test_prior_reference_grouping(self):
-        prior = NamedEntity(type=NamedEntityType.REFERENCE, text="Section 1: Intro", group_name="Section 1: Intro")
-        new_entity = NamedEntity(type=NamedEntityType.REFERENCE, text="Section 1: Intro")
+        prior = NamedEntity(
+            type=NamedEntityType.REFERENCE, text="Section 1: Intro", group_name="Section 1: Intro", relevance_percentage=100
+        )
+        new_entity = NamedEntity(type=NamedEntityType.REFERENCE, text="Section 1: Intro", relevance_percentage=0)
         use_case = GroupNamedEntitiesUseCase(prior_entities=[prior])
         groups = use_case.group([new_entity])
         self.assertEqual(len(groups), 1)
         group = groups[0]
         self.assertEqual(group.name, "Section 1: Intro")
         self.assertEqual(group.named_entities[0].text, "Section 1: Intro")
+        self.assertEqual(group.top_relevance_entity.relevance_percentage, 100)
 
     def test_multiple_types_independent_groups(self):
         date_ent = NamedEntity(type=NamedEntityType.DATE, text="2020-12-31")

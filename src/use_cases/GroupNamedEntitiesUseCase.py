@@ -14,19 +14,17 @@ class GroupNamedEntitiesUseCase:
         """Initialize groups from prior entities, sorted by relevance."""
         sorted_prior_entities = sorted(self.prior_entities, key=lambda x: x.relevance_percentage, reverse=True)
         for prior_entity in sorted_prior_entities:
-            group_key = prior_entity.group_name
-            if group_key in self.prior_groups:
-                group = self.prior_groups[group_key]
-                group.named_entities.append(prior_entity)
-                group.top_relevance_entity = self._determine_top_relevance_entity(group.top_relevance_entity, prior_entity)
-                group.name = group_key
-            else:
-                self.prior_groups[group_key] = NamedEntityGroup(
-                    type=prior_entity.type,
-                    name=prior_entity.group_name,
-                    named_entities=[prior_entity],
-                    top_relevance_entity=prior_entity,
-                )
+            group_name = prior_entity.group_name
+            if group_name in self.prior_groups:
+                self.prior_groups[group_name].named_entities.append(prior_entity)
+                continue
+
+            self.prior_groups[group_name] = NamedEntityGroup(
+                type=prior_entity.type,
+                name=prior_entity.group_name,
+                named_entities=[prior_entity],
+                top_relevance_entity=prior_entity,
+            )
 
     def group(self, named_entities: list[NamedEntity]) -> list[NamedEntityGroup]:
         self._calculate_relevance_scores(named_entities)
@@ -42,6 +40,7 @@ class GroupNamedEntitiesUseCase:
 
             self._create_new_group_for_entity(normalized_entity)
 
+        self._remove_empty_references_groups()
         return list(self.groups.values())
 
     @staticmethod
@@ -52,6 +51,7 @@ class GroupNamedEntitiesUseCase:
     def _try_assign_to_prior_group(self, named_entity: NamedEntity) -> bool:
         for prior_group in self.prior_groups.values():
             if prior_group.belongs_to_group(named_entity):
+                named_entity.group_name = prior_group.name
                 prior_group.named_entities = [named_entity]
                 prior_group.top_relevance_entity = self._determine_top_relevance_entity(
                     prior_group.top_relevance_entity, named_entity
@@ -89,9 +89,6 @@ class GroupNamedEntitiesUseCase:
     @staticmethod
     def _choose_better_group_name(current_name: str, candidate_name: str, entity_type: NamedEntityType) -> str:
         """Choose the better group name between current and candidate based on entity type."""
-        current_name = current_name or ""
-        candidate_name = candidate_name or ""
-
         if entity_type in [NamedEntityType.LOCATION, NamedEntityType.PERSON, NamedEntityType.ORGANIZATION]:
             if len(candidate_name) > len(current_name):
                 return candidate_name
@@ -121,3 +118,17 @@ class GroupNamedEntitiesUseCase:
             return named_entity.normalized_text
 
         return named_entity.text
+
+    def _remove_empty_references_groups(self):
+        keys_to_remove = []
+        for key, group in self.groups.items():
+            if group.type != NamedEntityType.REFERENCE:
+                continue
+            if len(group.named_entities) != 1:
+                continue
+            if group.named_entities[0].relevance_percentage != 100:
+                continue
+            keys_to_remove.append(key)
+
+        for key in keys_to_remove:
+            del self.groups[key]

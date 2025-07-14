@@ -28,7 +28,7 @@ class ReferencesUseCase:
                 )
                 entities.append(NamedEntity.from_segment(entity, segment, group.name))
 
-        return entities
+        return self.remove_references_in_same_words(entities)
 
     def get_entities_from_segments(self, segments: list[Segment]) -> list[NamedEntity]:
         reference_entities: list[NamedEntity] = list()
@@ -65,3 +65,31 @@ class ReferencesUseCase:
                         name=entity.text,
                     )
                 )
+
+    @staticmethod
+    def remove_references_in_same_words(entities: list[NamedEntity]) -> list[NamedEntity]:
+        only_references = [e for e in entities if e.type == NamedEntityType.REFERENCE]
+        ordered_entities = sorted(
+            only_references,
+            key=lambda e: (e.segment.source_id, e.segment.page_number, e.segment.segment_number, e.character_start),
+        )
+        indexes_to_remove = set()
+        for index, (entity, next_entity) in enumerate(zip(ordered_entities, ordered_entities[1:])):
+            if entity.segment.source_id != next_entity.segment.source_id:
+                continue
+            if entity.segment.page_number != next_entity.segment.page_number:
+                continue
+            if entity.segment.segment_number != next_entity.segment.segment_number:
+                continue
+            if entity.character_end <= next_entity.character_start:
+                continue
+            if len(entity.text) > len(next_entity.text):
+                indexes_to_remove.add(index + 1)
+            else:
+                indexes_to_remove.add(index)
+
+        for index in indexes_to_remove:
+            entity_index = entities.index(ordered_entities[index])
+            del entities[entity_index]
+
+        return entities

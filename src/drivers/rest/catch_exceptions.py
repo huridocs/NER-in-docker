@@ -8,13 +8,9 @@ def catch_exceptions(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
-            if kwargs["text"] is None and kwargs["file"] is None:
-                raise ValueError
             return await func(*args, **kwargs)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="No file or text provided")
         except HTTPError:
-            raise HTTPException(status_code=400, detail="Unprocessable PDF file")
+            raise HTTPException(status_code=400, detail="Unprocessable text or PDF file")
         except Exception as e:
             print(f"error {e}")
             traceback.print_exc()
