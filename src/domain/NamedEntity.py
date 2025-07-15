@@ -29,7 +29,8 @@ class NamedEntity(BaseModel):
     @staticmethod
     def from_segment(named_entity: "NamedEntity", segment: Segment, group_name: str = "") -> "NamedEntity":
         named_entity.segment = segment
-        named_entity.group_name = group_name
+        if not named_entity.group_name:
+            named_entity.group_name = group_name
         return named_entity
 
     @staticmethod
@@ -57,6 +58,9 @@ class NamedEntity(BaseModel):
         return dateparser.parse(text).strftime("%Y-%m-%d") if search_dates(self.text, settings=settings) else self.text
 
     def get_with_normalize_entity_text(self):
+        if self.type == NamedEntityType.REFERENCE:
+            return self
+
         normalization_functions = {
             NamedEntityType.PERSON: self.normalize_text,
             NamedEntityType.ORGANIZATION: self.normalize_text,
@@ -64,7 +68,6 @@ class NamedEntity(BaseModel):
             NamedEntityType.DATE: self.normalize_date,
             NamedEntityType.LAW: self.normalize_text,
             NamedEntityType.DOCUMENT_CODE: lambda x: x.strip(),
-            NamedEntityType.REFERENCE: self.normalize_reference,
         }
 
         self.normalized_text = normalization_functions[self.type](self.text)

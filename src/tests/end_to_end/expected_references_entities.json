@@ -1,232 +1,140 @@
 [
   {
-    "character_end": 15,
+    "character_end": 20,
     "character_start": 0,
-    "group_name": "Maria Diaz Rodriguez",
-    "relevance_percentage": 31,
+    "group_name": "1. Detailed Findings",
+    "relevance_percentage": 100,
     "segment": {
       "bounding_box": {
-        "height": 34,
-        "left": 72,
-        "top": 74,
-        "width": 429
+        "height": 18,
+        "left": 71,
+        "top": 145,
+        "width": 160
       },
-      "character_end": 15,
+      "character_end": 20,
       "character_start": 0,
       "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 1,
-      "text": "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023."
+      "pdf_name": "document_3.pdf",
+      "segment_number": 2,
+      "text": "1. Detailed Findings"
     },
-    "source_id": "test_document.pdf",
-    "text": "Maria Rodriguez",
-    "type": "PERSON"
+    "source_id": "document_3.pdf",
+    "text": "1. Detailed Findings",
+    "type": "REFERENCE"
   },
   {
-    "character_end": 41,
-    "character_start": 24,
-    "group_name": "the Louvre Museum",
-    "relevance_percentage": 31,
+    "character_end": 63,
+    "character_start": 39,
+    "group_name": "4. Results Interpretation",
+    "relevance_percentage": 0,
     "segment": {
       "bounding_box": {
-        "height": 34,
+        "height": 11,
         "left": 72,
-        "top": 74,
-        "width": 429
+        "top": 234,
+        "width": 436
       },
-      "character_end": 41,
-      "character_start": 24,
+      "character_end": 63,
+      "character_start": 39,
       "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 1,
-      "text": "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023."
+      "pdf_name": "document_3.pdf",
+      "segment_number": 4,
+      "text": "These granular results expand upon the \"Results Interpretation\" presented in Document 1."
     },
-    "source_id": "test_document.pdf",
-    "text": "the Louvre Museum",
-    "type": "ORGANIZATION"
+    "source_id": "document_3.pdf",
+    "text": "\"Results Interpretation\"",
+    "type": "REFERENCE"
   },
   {
-    "character_end": 50,
-    "character_start": 45,
-    "group_name": "Paris",
-    "relevance_percentage": 30,
+    "character_end": 80,
+    "character_start": 59,
+    "group_name": "3. Analysis Techniques",
+    "relevance_percentage": 0,
     "segment": {
       "bounding_box": {
-        "height": 34,
+        "height": 26,
         "left": 72,
-        "top": 74,
-        "width": 429
+        "top": 357,
+        "width": 444
       },
-      "character_end": 50,
-      "character_start": 45,
+      "character_end": 80,
+      "character_start": 59,
       "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 1,
-      "text": "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023."
+      "pdf_name": "document_3.pdf",
+      "segment_number": 7,
+      "text": "The capabilities of these algorithms build directly on the \"Analysis Techniques\" discussed in Document 2."
     },
-    "source_id": "test_document.pdf",
-    "text": "Paris",
-    "type": "LOCATION"
+    "source_id": "document_3.pdf",
+    "text": "\"Analysis Techniques\"",
+    "type": "REFERENCE"
   },
   {
-    "character_end": 58,
-    "character_start": 52,
-    "group_name": "France",
-    "relevance_percentage": 30,
+    "character_end": 72,
+    "character_start": 54,
+    "group_name": "Document 1: Project Overview",
+    "relevance_percentage": 0,
     "segment": {
       "bounding_box": {
-        "height": 34,
+        "height": 41,
         "left": 72,
-        "top": 74,
-        "width": 429
+        "top": 494,
+        "width": 439
       },
-      "character_end": 58,
-      "character_start": 52,
+      "character_end": 72,
+      "character_start": 54,
       "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 1,
-      "text": "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023."
+      "pdf_name": "document_3.pdf",
+      "segment_number": 10,
+      "text": "The overall context for this work can be found in the \"Project Overview\" (Document 1). The findings presented in \"Detailed Findings\" within this document will guide our subsequent research directions."
     },
-    "source_id": "test_document.pdf",
-    "text": "France",
-    "type": "LOCATION"
+    "source_id": "document_3.pdf",
+    "text": "\"Project Overview\"",
+    "type": "REFERENCE"
   },
   {
-    "character_end": 87,
+    "character_end": 84,
     "character_start": 74,
-    "group_name": "2023-07-12",
-    "relevance_percentage": 46,
+    "group_name": "Document 1: Project Overview",
+    "relevance_percentage": 0,
     "segment": {
       "bounding_box": {
-        "height": 34,
+        "height": 41,
         "left": 72,
-        "top": 74,
-        "width": 429
+        "top": 494,
+        "width": 439
       },
-      "character_end": 87,
+      "character_end": 84,
       "character_start": 74,
       "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 1,
-      "text": "Maria Rodriguez visited the Louvre Museum in Paris, France, on Wednesday, July 12, 2023."
+      "pdf_name": "document_3.pdf",
+      "segment_number": 10,
+      "text": "The overall context for this work can be found in the \"Project Overview\" (Document 1). The findings presented in \"Detailed Findings\" within this document will guide our subsequent research directions."
     },
-    "source_id": "test_document.pdf",
-    "text": "July 12, 2023",
-    "type": "DATE"
+    "source_id": "document_3.pdf",
+    "text": "Document 1",
+    "type": "REFERENCE"
   },
   {
-    "character_end": 52,
-    "character_start": 32,
-    "group_name": "Maria Diaz Rodriguez",
-    "relevance_percentage": 18,
+    "character_end": 132,
+    "character_start": 113,
+    "group_name": "1. Detailed Findings",
+    "relevance_percentage": 0,
     "segment": {
       "bounding_box": {
-        "height": 14,
-        "left": 73,
-        "top": 153,
-        "width": 350
-      },
-      "character_end": 52,
-      "character_start": 32,
-      "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 2,
-      "text": "The full name of this person is Maria Diaz Rodriguez."
-    },
-    "source_id": "test_document.pdf",
-    "text": "Maria Diaz Rodriguez",
-    "type": "PERSON"
-  },
-  {
-    "character_end": 40,
-    "character_start": 26,
-    "group_name": "Maria Diaz Rodriguez",
-    "relevance_percentage": 33,
-    "segment": {
-      "bounding_box": {
-        "height": 14,
+        "height": 41,
         "left": 72,
-        "top": 213,
-        "width": 269
+        "top": 494,
+        "width": 439
       },
-      "character_end": 40,
-      "character_start": 26,
+      "character_end": 132,
+      "character_start": 113,
       "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 3,
-      "text": "It can also be written as M.D. Rodriguez."
+      "pdf_name": "document_3.pdf",
+      "segment_number": 10,
+      "text": "The overall context for this work can be found in the \"Project Overview\" (Document 1). The findings presented in \"Detailed Findings\" within this document will guide our subsequent research directions."
     },
-    "source_id": "test_document.pdf",
-    "text": "M.D. Rodriguez",
-    "type": "PERSON"
-  },
-  {
-    "character_end": 49,
-    "character_start": 41,
-    "group_name": "HURIDOCS",
-    "relevance_percentage": 16,
-    "segment": {
-      "bounding_box": {
-        "height": 15,
-        "left": 72,
-        "top": 292,
-        "width": 352
-      },
-      "character_end": 49,
-      "character_start": 41,
-      "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 4,
-      "text": "She is working in an organization called HURIDOCS."
-    },
-    "source_id": "test_document.pdf",
-    "text": "HURIDOCS",
-    "type": "ORGANIZATION"
-  },
-  {
-    "character_end": 10,
-    "character_start": 4,
-    "group_name": "Senate",
-    "relevance_percentage": 30,
-    "segment": {
-      "bounding_box": {
-        "height": 34,
-        "left": 72,
-        "top": 351,
-        "width": 440
-      },
-      "character_end": 10,
-      "character_start": 4,
-      "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 5,
-      "text": "The Senate passed Resolution No. 122, establishing a set of rules for the impeachment trial."
-    },
-    "source_id": "test_document.pdf",
-    "text": "Senate",
-    "type": "ORGANIZATION"
-  },
-  {
-    "character_end": 36,
-    "character_start": 18,
-    "group_name": "Resolution No. 122",
-    "relevance_percentage": 46,
-    "segment": {
-      "bounding_box": {
-        "height": 34,
-        "left": 72,
-        "top": 351,
-        "width": 440
-      },
-      "character_end": 36,
-      "character_start": 18,
-      "page_number": 1,
-      "pdf_name": "test_document.pdf",
-      "segment_number": 5,
-      "text": "The Senate passed Resolution No. 122, establishing a set of rules for the impeachment trial."
-    },
-    "source_id": "test_document.pdf",
-    "text": "Resolution No. 122",
-    "type": "LAW"
+    "source_id": "document_3.pdf",
+    "text": "\"Detailed Findings\"",
+    "type": "REFERENCE"
   }
 ]

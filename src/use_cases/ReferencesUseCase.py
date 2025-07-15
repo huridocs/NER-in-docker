@@ -23,6 +23,8 @@ class ReferencesUseCase:
                 entity = NamedEntity(
                     type=NamedEntityType.REFERENCE,
                     text=segment.text[character_start:character_end],
+                    group_name=group.name,
+                    normalized_text=group.name,
                     character_start=character_start,
                     character_end=character_end,
                 )
@@ -34,20 +36,26 @@ class ReferencesUseCase:
         reference_entities: list[NamedEntity] = list()
 
         for segment in segments:
+            if not segment.text:
+                continue
             if str(segment.type).lower() in TITLES_TYPES:
                 title_entity = NamedEntity(
                     type=NamedEntityType.REFERENCE,
                     text=segment.text,
+                    group_name=segment.text,
+                    normalized_text=segment.text,
                     character_start=0,
                     character_end=len(segment.text),
-                    relevance_percentage=1,
+                    relevance_percentage=100,
                     segment_type=TokenType.from_text(segment.type),
                 )
-                reference_entities.append(NamedEntity.from_segment(title_entity, segment))
+                named_entity = NamedEntity.from_segment(title_entity, segment)
+                reference_entities.append(named_entity)
                 self.references_groups.append(
                     NamedEntityGroup(
                         type=NamedEntityType.REFERENCE,
-                        name=segment.text,
+                        name=named_entity.group_name,
+                        top_relevance_entity=named_entity,
                     )
                 )
 

@@ -15,7 +15,7 @@
       }
     ],
     "group_name": "Maria Diaz Rodriguez",
-    "top_score_entity": {
+    "top_relevance_entity": {
       "character_end": 40,
       "character_start": 26,
       "group_name": "Maria Diaz Rodriguez",
@@ -48,7 +48,7 @@
       }
     ],
     "group_name": "the Louvre Museum",
-    "top_score_entity": {
+    "top_relevance_entity": {
       "character_end": 41,
       "character_start": 24,
       "group_name": "the Louvre Museum",
@@ -81,7 +81,7 @@
       }
     ],
     "group_name": "Paris",
-    "top_score_entity": {
+    "top_relevance_entity": {
       "character_end": 50,
       "character_start": 45,
       "group_name": "Paris",
@@ -114,7 +114,7 @@
       }
     ],
     "group_name": "France",
-    "top_score_entity": {
+    "top_relevance_entity": {
       "character_end": 58,
       "character_start": 52,
       "group_name": "France",
@@ -147,7 +147,7 @@
       }
     ],
     "group_name": "2023-07-12",
-    "top_score_entity": {
+    "top_relevance_entity": {
       "character_end": 87,
       "character_start": 74,
       "group_name": "2023-07-12",
@@ -180,7 +180,7 @@
       }
     ],
     "group_name": "HURIDOCS",
-    "top_score_entity": {
+    "top_relevance_entity": {
       "character_end": 49,
       "character_start": 41,
       "group_name": "HURIDOCS",
@@ -213,7 +213,7 @@
       }
     ],
     "group_name": "Senate",
-    "top_score_entity": {
+    "top_relevance_entity": {
       "character_end": 10,
       "character_start": 4,
       "group_name": "Senate",
@@ -246,7 +246,7 @@
       }
     ],
     "group_name": "Resolution No. 122",
-    "top_score_entity": {
+    "top_relevance_entity": {
       "character_end": 36,
       "character_start": 18,
       "group_name": "Resolution No. 122",

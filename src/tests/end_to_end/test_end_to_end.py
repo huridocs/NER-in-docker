@@ -4,10 +4,6 @@ from unittest import TestCase
 import requests
 
 from configuration import ROOT_PATH, SRC_PATH
-from domain.NamedEntityType import NamedEntityType
-from drivers.rest.response_entities.GroupResponse import GroupResponse
-from drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
-from drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
 
 
 class TestEndToEnd(TestCase):
@@ -20,8 +16,9 @@ class TestEndToEnd(TestCase):
     def test_empty_query(self):
         result = requests.post(self.service_url)
 
-        self.assertEqual(400, result.status_code)
-        self.assertEqual("No file or text provided", result.json()["detail"])
+        self.assertEqual(200, result.status_code)
+        self.assertEqual([], result.json()["entities"])
+        self.assertEqual([], result.json()["groups"])
 
     def test_empty_text_query(self):
         data = {"text": ""}
@@ -39,7 +36,7 @@ class TestEndToEnd(TestCase):
             result = requests.post(self.service_url, files=files)
 
         self.assertEqual(400, result.status_code)
-        self.assertEqual("Unprocessable PDF file", result.json()["detail"])
+        self.assertEqual("Unprocessable text or PDF file", result.json()["detail"])
 
     def test_text_extraction(self):
         text = (
@@ -96,7 +93,7 @@ class TestEndToEnd(TestCase):
             self.assertIn("group_name", group)
             self.assertIn("type", group)
             self.assertIn("entities", group)
-            self.assertIn("top_score_entity", group)
+            self.assertIn("top_relevance_entity", group)
             self.assertIsInstance(group["entities"], list)
             self.assertEqual(expected_group["group_name"], group["group_name"])
             self.assertEqual(expected_group["type"], group["type"])
@@ -138,7 +135,7 @@ class TestEndToEnd(TestCase):
             self.assertEqual(expected_group["group_name"], group["group_name"])
             self.assertEqual(expected_group["type"], group["type"])
             self.assertEqual(expected_group["entities_count"], len(group["entities"]))
-            self.assertIn("top_score_entity", group)
+            self.assertIn("top_relevance_entity", group)
 
     def test_pdf_extraction(self):
         pdf_path: Path = Path(SRC_PATH, "tests", "end_to_end", "test_pdfs", "test_document.pdf")
@@ -187,7 +184,7 @@ class TestEndToEnd(TestCase):
                 entity_text = group["entities"][j]
                 self.assertEqual(expected_entity["index"], entity_text["index"])
                 self.assertEqual(expected_entity["text"], entity_text["text"])
-            self.assertIn("top_score_entity", group)
+            self.assertIn("top_relevance_entity", group)
             if "entities_ids" in expected:
                 self.assertIn("entities_ids", group)
                 self.assertEqual(expected["entities_ids"], group["entities_ids"])
@@ -212,38 +209,60 @@ class TestEndToEnd(TestCase):
 
         expected_entities = json.loads((SRC_PATH / "tests" / "end_to_end" / "expected_references_entities.json").read_text())
         expected_groups = json.loads((SRC_PATH / "tests" / "end_to_end" / "expected_references_groups.json").read_text())
+        self.assertEqual(100, groups[0]["top_relevance_entity"]["relevance_percentage"])
 
         for i, expected in enumerate(expected_entities):
             entity = entities[i]
+            self.assertEqual(expected["character_end"], entity["character_end"])
+            self.assertEqual(expected["character_start"], entity["character_start"])
             self.assertEqual(expected["group_name"], entity["group_name"])
-            self.assertEqual(expected["page_number"], entity["page_number"])
+            self.assertEqual(expected["relevance_percentage"], entity["relevance_percentage"])
+            self.assertEqual(expected["source_id"], entity["source_id"])
             self.assertEqual(expected["text"], entity["text"])
             self.assertEqual(expected["type"], entity["type"])
-            # Segment checks
-            self.assertEqual(expected["segment"]["text"], entity["segment"]["text"])
-            self.assertEqual(expected["segment"]["page_number"], entity["segment"]["page_number"])
-            self.assertEqual(expected["segment"]["segment_number"], entity["segment"]["segment_number"])
-            self.assertEqual(expected["segment"]["character_start"], entity["segment"]["character_start"])
-            self.assertEqual(expected["segment"]["character_end"], entity["segment"]["character_end"])
-            self.assertEqual(expected["segment"]["pdf_name"], entity["segment"]["pdf_name"])
-            # Bounding box checks
-            for key in ["left", "top", "width", "height"]:
-                self.assertEqual(expected["segment"]["bounding_box"][key], entity["segment"]["bounding_box"][key])
 
-        self.assertEqual(len(expected_groups), len(groups))
+            segment = entity["segment"]
+            expected_segment = expected["segment"]
+            self.assertEqual(expected_segment["bounding_box"]["height"], segment["bounding_box"]["height"])
+            self.assertEqual(expected_segment["bounding_box"]["left"], segment["bounding_box"]["left"])
+            self.assertEqual(expected_segment["bounding_box"]["top"], segment["bounding_box"]["top"])
+            self.assertEqual(expected_segment["bounding_box"]["width"], segment["bounding_box"]["width"])
+            self.assertEqual(expected_segment["character_end"], segment["character_end"])
+            self.assertEqual(expected_segment["character_start"], segment["character_start"])
+            self.assertEqual(expected_segment["page_number"], segment["page_number"])
+            self.assertEqual(expected_segment["pdf_name"], segment["pdf_name"])
+            self.assertEqual(expected_segment["segment_number"], segment["segment_number"])
+            self.assertEqual(expected_segment["text"], segment["text"])
+
         for i, expected in enumerate(expected_groups):
             group = groups[i]
             self.assertEqual(expected["group_name"], group["group_name"])
             self.assertEqual(expected["type"], group["type"])
-            self.assertEqual(expected["entities_ids"], group["entities_ids"])
-            self.assertEqual(expected["entities_text"], group["entities_text"])
-            # Segment checks
-            self.assertEqual(expected["segment"]["text"], group["segment"]["text"])
-            self.assertEqual(expected["segment"]["page_number"], group["segment"]["page_number"])
-            self.assertEqual(expected["segment"]["segment_number"], group["segment"]["segment_number"])
-            self.assertEqual(expected["segment"]["character_start"], group["segment"]["character_start"])
-            self.assertEqual(expected["segment"]["character_end"], group["segment"]["character_end"])
-            self.assertEqual(expected["segment"]["pdf_name"], group["segment"]["pdf_name"])
-            # Bounding box checks
-            for key in ["left", "top", "width", "height"]:
-                self.assertEqual(expected["segment"]["bounding_box"][key], group["segment"]["bounding_box"][key])
+            self.assertEqual(expected["entities"], group["entities"])
+            self.assertEqual(
+                expected["top_relevance_entity"]["character_end"], group["top_relevance_entity"]["character_end"]
+            )
+            self.assertEqual(
+                expected["top_relevance_entity"]["character_start"], group["top_relevance_entity"]["character_start"]
+            )
+            self.assertEqual(expected["top_relevance_entity"]["group_name"], group["top_relevance_entity"]["group_name"])
+            self.assertEqual(
+                expected["top_relevance_entity"]["relevance_percentage"],
+                group["top_relevance_entity"]["relevance_percentage"],
+            )
+            self.assertEqual(expected["top_relevance_entity"]["source_id"], group["top_relevance_entity"]["source_id"])
+            self.assertEqual(expected["top_relevance_entity"]["text"], group["top_relevance_entity"]["text"])
+            self.assertEqual(expected["top_relevance_entity"]["type"], group["top_relevance_entity"]["type"])
+
+            segment = group["top_relevance_entity"]["segment"]
+            expected_segment = expected["top_relevance_entity"]["segment"]
+            self.assertEqual(expected_segment["bounding_box"]["height"], segment["bounding_box"]["height"])
+            self.assertEqual(expected_segment["bounding_box"]["left"], segment["bounding_box"]["left"])
+            self.assertEqual(expected_segment["bounding_box"]["top"], segment["bounding_box"]["top"])
+            self.assertEqual(expected_segment["bounding_box"]["width"], segment["bounding_box"]["width"])
+            self.assertEqual(expected_segment["character_end"], segment["character_end"])
+            self.assertEqual(expected_segment["character_start"], segment["character_start"])
+            self.assertEqual(expected_segment["page_number"], segment["page_number"])
+            self.assertEqual(expected_segment["pdf_name"], segment["pdf_name"])
+            self.assertEqual(expected_segment["segment_number"], segment["segment_number"])
+            self.assertEqual(expected_segment["text"], segment["text"])
