@@ -37,7 +37,7 @@ jobs:
       run: make start_detached
 
     - name: Check API ready
-      uses: emilioschepis/wait-for-endpoint@v1.0.3
+      uses: emilioschepis/wait-for-endpoint@v1.0.4
       with:
         url: http://localhost:5070
         method: GET
