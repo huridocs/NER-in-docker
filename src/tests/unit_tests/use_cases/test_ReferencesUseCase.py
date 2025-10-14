@@ -1,13 +1,13 @@
 from unittest import TestCase
 from pathlib import Path
 
-from configuration import ROOT_PATH
-from domain.BoundingBox import BoundingBox
-from domain.NamedEntity import NamedEntity
-from domain.NamedEntityType import NamedEntityType
-from domain.Segment import Segment
-from domain.TokenType import TokenType
-from use_cases.ReferencesUseCase import ReferencesUseCase
+from ner_in_docker.configuration import ROOT_PATH
+from ner_in_docker.domain.BoundingBox import BoundingBox
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
+from ner_in_docker.domain.Segment import Segment
+from ner_in_docker.domain.TokenType import TokenType
+from ner_in_docker.use_cases.ReferencesUseCase import ReferencesUseCase
 
 TEST_DATABASE_NAME = "test_pdf_use_case.db"
 TEST_DATABASE_PATH = Path(ROOT_PATH, "data", TEST_DATABASE_NAME)

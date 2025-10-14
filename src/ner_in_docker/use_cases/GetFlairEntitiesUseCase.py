@@ -1,9 +1,9 @@
 from pathlib import Path
 from flair.nn import Classifier
-from configuration import MODELS_PATH
-from domain.NamedEntity import NamedEntity
+from ner_in_docker.configuration import MODELS_PATH
+from ner_in_docker.domain.NamedEntity import NamedEntity
 from flair.data import Sentence, Span
-from domain.NamedEntityType import NamedEntityType
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
 
 flair_model = Classifier.load(Path(MODELS_PATH, "flair", "pytorch_model.bin"))
 

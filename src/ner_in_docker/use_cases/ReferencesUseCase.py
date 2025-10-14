@@ -1,9 +1,9 @@
-from configuration import TITLES_TYPES
-from domain.NamedEntityGroup import NamedEntityGroup
-from domain.NamedEntityType import NamedEntityType
-from domain.NamedEntity import NamedEntity
-from domain.Segment import Segment
-from domain.TokenType import TokenType
+from ner_in_docker.configuration import TITLES_TYPES
+from ner_in_docker.domain.NamedEntityGroup import NamedEntityGroup
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.Segment import Segment
+from ner_in_docker.domain.TokenType import TokenType
 
 
 class ReferencesUseCase:

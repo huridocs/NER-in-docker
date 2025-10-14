@@ -1,7 +1,6 @@
 from abc import abstractmethod, ABC
 
-from domain.NamedEntity import NamedEntity
-from domain.NamedEntityGroup import NamedEntityGroup
+from ner_in_docker.domain.NamedEntity import NamedEntity
 
 
 class EntitiesStoreRepository(ABC):

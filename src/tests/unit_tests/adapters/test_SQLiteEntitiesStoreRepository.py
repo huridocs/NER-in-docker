@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
-from domain.NamedEntityType import NamedEntityType
-from domain.NamedEntity import NamedEntity
-from domain.Segment import Segment
+from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.Segment import Segment
 
 TEST_DATABASE_NAME = "test.db"
 

@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from domain.NamedEntityType import NamedEntityType
-from domain.NamedEntity import NamedEntity
-from use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
 
 
 class TestNamedEntityMergerUseCase(TestCase):

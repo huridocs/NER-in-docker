@@ -1,10 +1,9 @@
 from pydantic import BaseModel
 
-from domain.NamedEntityGroup import NamedEntityGroup
-from domain.NamedEntityType import NamedEntityType
-from drivers.rest.response_entities.EntityTextResponse import EntityTextResponse
-from drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
-from drivers.rest.response_entities.SegmentResponse import SegmentResponse
+from ner_in_docker.domain.NamedEntityGroup import NamedEntityGroup
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
+from ner_in_docker.drivers.rest.response_entities.EntityTextResponse import EntityTextResponse
+from ner_in_docker.drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
 
 
 class GroupResponse(BaseModel):

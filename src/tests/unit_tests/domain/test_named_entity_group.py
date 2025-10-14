@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from domain.NamedEntityGroup import NamedEntityGroup
-from domain.NamedEntityType import NamedEntityType
+from ner_in_docker.domain.NamedEntityGroup import NamedEntityGroup
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
 
 
 class TestNamedEntityGroup(TestCase):

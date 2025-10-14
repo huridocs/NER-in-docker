@@ -1,10 +1,10 @@
 import sqlite3
 from pathlib import Path
 
-from adapters.EntityPersistence import EntityPersistence
-from configuration import ROOT_PATH
-from domain.NamedEntity import NamedEntity
-from ports.EntitiesStoreRepository import EntitiesStoreRepository
+from ner_in_docker.adapters.EntityPersistence import EntityPersistence
+from ner_in_docker.configuration import ROOT_PATH
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.ports.EntitiesStoreRepository import EntitiesStoreRepository
 
 
 class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):

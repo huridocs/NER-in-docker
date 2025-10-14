@@ -1,7 +1,7 @@
 from unittest import TestCase
-from domain.NamedEntity import NamedEntity
-from domain.NamedEntityType import NamedEntityType
-from use_cases.GetGLiNEREntitiesUseCase import GetGLiNEREntitiesUseCase
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
+from ner_in_docker.use_cases.GetGLiNEREntitiesUseCase import GetGLiNEREntitiesUseCase
 
 
 class TestGLINEREntitiesUseCase(TestCase):

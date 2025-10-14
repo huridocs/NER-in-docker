@@ -1,8 +1,8 @@
 import requests
 from pathlib import Path
-from configuration import PDF_ANALYSIS_SERVICE_URL
-from domain.Segment import Segment
-from ports.PDFToSegmentsRepository import PDFToSegmentsRepository
+from ner_in_docker.configuration import PDF_ANALYSIS_SERVICE_URL
+from ner_in_docker.domain.Segment import Segment
+from ner_in_docker.ports.PDFToSegmentsRepository import PDFToSegmentsRepository
 
 
 class PDFLayoutAnalysisRepository(PDFToSegmentsRepository):

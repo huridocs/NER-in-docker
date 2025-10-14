@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from domain.Segment import Segment
+from ner_in_docker.domain.Segment import Segment
 
 
 class PDFToSegmentsRepository(ABC):

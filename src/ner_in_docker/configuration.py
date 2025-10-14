@@ -1,7 +1,7 @@
 from pathlib import Path
 
-SRC_PATH = Path(__file__).parent.absolute()
-ROOT_PATH = Path(__file__).parent.parent.absolute()
+SRC_PATH = Path(__file__).parent.parent.absolute()
+ROOT_PATH = SRC_PATH.parent.absolute()
 MODELS_PATH = Path(ROOT_PATH, "models")
 TITLES_TYPES = ["title", "section header"]
 SEPARATOR = " ||| "

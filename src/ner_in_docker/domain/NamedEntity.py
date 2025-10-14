@@ -4,11 +4,11 @@ from pydantic import BaseModel
 from unidecode import unidecode
 import dateparser
 
-from configuration import TITLES_TYPES, SEPARATOR
-from domain.NamedEntityType import NamedEntityType
+from ner_in_docker.configuration import TITLES_TYPES, SEPARATOR
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
 import country_converter as coco
-from domain.Segment import Segment
-from domain.TokenType import TokenType
+from ner_in_docker.domain.Segment import Segment
+from ner_in_docker.domain.TokenType import TokenType
 
 
 class NamedEntity(BaseModel):

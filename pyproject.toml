@@ -52,30 +52,9 @@ Homepage = "https://github.com/huridocs/NER-in-docker"
 Documentation = "https://github.com/huridocs/NER-in-docker"
 Repository = "https://github.com/huridocs/NER-in-docker"
 
-[tool.setuptools]
-include-package-data = true
-packages = [
-    "ner_in_docker",
-    "ner_in_docker.adapters",
-    "ner_in_docker.domain",
-    "ner_in_docker.drivers",
-    "ner_in_docker.drivers.rest",
-    "ner_in_docker.drivers.rest.response_entities",
-    "ner_in_docker.ports",
-    "ner_in_docker.use_cases",
-    "ner_in_docker.configuration",
-]
-
-[tool.setuptools.package-dir]
-ner_in_docker = "src"
-"ner_in_docker.adapters" = "src/adapters"
-"ner_in_docker.domain" = "src/domain"
-"ner_in_docker.drivers" = "src/drivers"
-"ner_in_docker.drivers.rest" = "src/drivers/rest"
-"ner_in_docker.drivers.rest.response_entities" = "src/drivers/rest/response_entities"
-"ner_in_docker.ports" = "src/ports"
-"ner_in_docker.use_cases" = "src/use_cases"
-"ner_in_docker.configuration" = "src/configuration"
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ner_in_docker*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.txt", "*.md", "*.json", "*.xml"]

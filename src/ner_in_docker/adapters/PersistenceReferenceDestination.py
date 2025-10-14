@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from domain.BoundingBox import BoundingBox
-from domain.Segment import Segment
+from ner_in_docker.domain.BoundingBox import BoundingBox
+from ner_in_docker.domain.Segment import Segment
 
 
 @dataclass

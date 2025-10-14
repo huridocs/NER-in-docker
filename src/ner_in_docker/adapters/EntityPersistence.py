@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-from domain.NamedEntity import NamedEntity
-from domain.NamedEntityType import NamedEntityType
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
 from typing import Optional
-from domain.Segment import Segment
-from domain.BoundingBox import BoundingBox
+from ner_in_docker.domain.Segment import Segment
+from ner_in_docker.domain.BoundingBox import BoundingBox
 
 
 class EntityPersistence(BaseModel):

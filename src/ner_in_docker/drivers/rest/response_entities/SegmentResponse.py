@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
-from domain.BoundingBox import BoundingBox
-from domain.NamedEntityGroup import NamedEntityGroup
-from domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.BoundingBox import BoundingBox
+from ner_in_docker.domain.NamedEntityGroup import NamedEntityGroup
+from ner_in_docker.domain.NamedEntity import NamedEntity
 
 
 class SegmentResponse(BaseModel):

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
+from ner_in_docker.drivers.rest.response_entities.NamedEntityResponse import NamedEntityResponse
 
 
 class EntityTextResponse(BaseModel):

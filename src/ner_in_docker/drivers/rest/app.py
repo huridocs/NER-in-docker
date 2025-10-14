@@ -3,15 +3,15 @@ import tempfile
 import uuid
 from pathlib import Path
 from fastapi import FastAPI, Form, UploadFile, File
-from adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
-from adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
+from ner_in_docker.adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
+from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
 
-from domain.Segment import Segment
-from drivers.rest.catch_exceptions import catch_exceptions
-from drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
-from use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
-from use_cases.NamedEntitiesUseCase import NamedEntitiesUseCase
-from use_cases.ReferencesUseCase import ReferencesUseCase
+from ner_in_docker.domain.Segment import Segment
+from ner_in_docker.drivers.rest.catch_exceptions import catch_exceptions
+from ner_in_docker.drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
+from ner_in_docker.use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
+from ner_in_docker.use_cases.NamedEntitiesUseCase import NamedEntitiesUseCase
+from ner_in_docker.use_cases.ReferencesUseCase import ReferencesUseCase
 import logging
 
 logging.basicConfig(level=logging.INFO)

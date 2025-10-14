@@ -1,7 +1,7 @@
-from domain.NamedEntity import NamedEntity
-from domain.Segment import Segment
-from use_cases.GetFlairEntitiesUseCase import GetFlairEntitiesUseCase
-from use_cases.GetGLiNEREntitiesUseCase import GetGLiNEREntitiesUseCase
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.Segment import Segment
+from ner_in_docker.use_cases.GetFlairEntitiesUseCase import GetFlairEntitiesUseCase
+from ner_in_docker.use_cases.GetGLiNEREntitiesUseCase import GetGLiNEREntitiesUseCase
 
 
 class NamedEntitiesUseCase:

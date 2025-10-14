@@ -1,9 +1,9 @@
 from pathlib import Path
 from dateparser.search import search_dates
 from gliner import GLiNER
-from configuration import MODELS_PATH
-from domain.NamedEntity import NamedEntity
-from domain.NamedEntityType import NamedEntityType
+from ner_in_docker.configuration import MODELS_PATH
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
 
 gliner_path = Path(MODELS_PATH, "gliner")
 classifier = GLiNER.from_pretrained(gliner_path) if gliner_path.exists() else None

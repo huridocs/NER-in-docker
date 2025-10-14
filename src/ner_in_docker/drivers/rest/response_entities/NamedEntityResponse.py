@@ -1,7 +1,7 @@
 from pydantic import BaseModel
-from domain.NamedEntity import NamedEntity
-from domain.NamedEntityType import NamedEntityType
-from drivers.rest.response_entities.SegmentResponse import SegmentResponse
+from ner_in_docker.domain.NamedEntity import NamedEntity
+from ner_in_docker.domain.NamedEntityType import NamedEntityType
+from ner_in_docker.drivers.rest.response_entities.SegmentResponse import SegmentResponse
 
 
 class NamedEntityResponse(BaseModel):
