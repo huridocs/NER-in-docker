@@ -3,7 +3,7 @@ from os import makedirs
 from os.path import join, exists
 from huggingface_hub import snapshot_download
 
-from configuration import MODELS_PATH
+from configuration.configuration import MODELS_PATH
 
 
 def download_progress(count, block_size, total_size):

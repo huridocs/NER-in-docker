@@ -1,7 +1,7 @@
 from pathlib import Path
 from dateparser.search import search_dates
 from gliner import GLiNER
-from configuration import MODELS_PATH
+from configuration.configuration import MODELS_PATH
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType
 

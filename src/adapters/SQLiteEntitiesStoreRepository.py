@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 
 from adapters.EntityPersistence import EntityPersistence
-from configuration import ROOT_PATH
+from configuration.configuration import ROOT_PATH
 from domain.NamedEntity import NamedEntity
 from ports.EntitiesStoreRepository import EntitiesStoreRepository
 

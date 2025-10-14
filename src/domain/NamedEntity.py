@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from unidecode import unidecode
 import dateparser
 
-from configuration import TITLES_TYPES, SEPARATOR
+from configuration.configuration import TITLES_TYPES, SEPARATOR
 from domain.NamedEntityType import NamedEntityType
 import country_converter as coco
 from domain.Segment import Segment

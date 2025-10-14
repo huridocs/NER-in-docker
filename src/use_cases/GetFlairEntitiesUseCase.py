@@ -1,6 +1,6 @@
 from pathlib import Path
 from flair.nn import Classifier
-from configuration import MODELS_PATH
+from configuration.configuration import MODELS_PATH
 from domain.NamedEntity import NamedEntity
 from flair.data import Sentence, Span
 from domain.NamedEntityType import NamedEntityType
