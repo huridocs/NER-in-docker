@@ -63,9 +63,6 @@ packages = [
     "ner_in_docker.drivers.rest.response_entities",
     "ner_in_docker.ports",
     "ner_in_docker.use_cases",
-    # single-file modules at the root of src/
-    "ner_in_docker.configuration",
-    "ner_in_docker.download_models",
 ]
 
 [tool.setuptools.package-dir]
@@ -77,8 +74,9 @@ ner_in_docker = "src"
 "ner_in_docker.drivers.rest.response_entities" = "src/drivers/rest/response_entities"
 "ner_in_docker.ports" = "src/ports"
 "ner_in_docker.use_cases" = "src/use_cases"
-"ner_in_docker.configuration" = "src/configuration.py"
-"ner_in_docker.download_models" = "src/download_models.py"
+
+[tool.setuptools.py-modules]
+# Single-file modules at the root of src/ will be included automatically
 
 [tool.setuptools.package-data]
 "*" = ["*.txt", "*.md", "*.json", "*.xml"]
