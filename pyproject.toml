@@ -1,6 +1,112 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "setuptools_scm[toml]>=7.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "ner-in-docker"
-version = "0.1.0"
-description = "Add your description here"
-requires-python = ">=3.12"
-dependencies = []
+name = "NER-in-docker"
+dynamic = ["version"]
+description = "NER-in-docker"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {text = "MIT"}
+authors = [
+    {name = "Ali Altıparmak", email = "ali6parmakk@gmail.com"},
+    {name = "Gabriel Piles"}
+]
+requires-python = ">=3.8"
+dependencies = [
+    "fastapi==0.115.6",
+    "python-multipart==0.0.20",
+    "cmake==3.31.6",
+    "pydantic==2.10.5",
+    "gunicorn==23.0.0",
+    "uvicorn==0.34.0",
+    "flair==0.15.1",
+    "gliner==0.2.15",
+    "spacy==3.8.7",
+    "dateparser==1.2.0",
+    "Unidecode==1.3.8",
+    "RapidFuzz==3.11.0",
+    "country_converter==1.3",
+    "huggingface-hub==0.27.1",
+    "requests==2.32.3",
+    "torch==2.7.1"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.12.5"
+]
+test = [
+    "pytest>=8.4.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/huridocs/NER-in-docker"
+Documentation = "https://github.com/huridocs/NER-in-docker"
+Repository = "https://github.com/huridocs/NER-in-docker"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src.domain*", "src.drivers.rest.response_entities*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.txt", "*.md", "*.json", "*.xml"]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "no-local-version"
+write_to = "./_version.py"
+
+[tool.black]
+line-length = 125
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 125
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "lxml.*",
+]
+ignore_missing_imports = true
