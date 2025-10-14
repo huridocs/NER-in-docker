@@ -57,7 +57,11 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["*"]
+include = ["ner_in_docker*"]
+
+[tool.setuptools]
+include-package-data = true
+packages = ["ner_in_docker"]
 
 [tool.setuptools.package-data]
 "*" = ["*.txt", "*.md", "*.json", "*.xml"]
