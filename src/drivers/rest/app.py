@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, Form, UploadFile, File
 from adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
 from adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
-from domain.NamedEntityType import NamedEntityType
+
 from domain.Segment import Segment
 from drivers.rest.catch_exceptions import catch_exceptions
 from drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
@@ -53,7 +53,10 @@ async def get_named_entities(
     named_entities_groups = GroupNamedEntitiesUseCase(entities_from_db).group(named_entities)
 
     if namespace:
-        SQLiteEntitiesStoreRepository(namespace).save_entities(named_entities)
+        repository = SQLiteEntitiesStoreRepository(namespace)
+        repository.save_entities(named_entities)
+        if identifier:
+            repository.save_identifier(identifier)
 
     return NamedEntitiesResponse.from_groups(named_entities_groups)
 
@@ -63,3 +66,13 @@ async def get_named_entities(
 async def delete_namespace(namespace: str = Form(None)):
     SQLiteEntitiesStoreRepository(namespace).delete_database()
     return "Deleted"
+
+
+@app.post("/is_processed")
+@catch_exceptions
+async def is_processed(namespace: str = Form(None), identifier: str = Form(None)):
+    if not namespace or not identifier:
+        return False
+
+    exists = SQLiteEntitiesStoreRepository(namespace).is_processed(identifier)
+    return exists

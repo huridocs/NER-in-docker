@@ -1,4 +1,4 @@
-HAS_GPU := $(shell command -v nvidia-smi > /dev/null && echo 1 || echo 0)
+HAS_GPU := `command -v nvidia-smi > /dev/null && echo "1" || echo "0"`
 
 install:
 	. .venv/bin/activate; pip install -Ur requirements.txt
@@ -27,20 +27,16 @@ download_models:
 	. .venv/bin/activate; command python src/download_models.py
 
 start:
-ifeq ($(OS), Windows_NT)
-	if not exist models mkdir models
-	if not exist data mkdir data
-else
+	#!/usr/bin/env bash
 	mkdir -p ./models
 	mkdir -p ./data
-endif
-ifeq ($(HAS_GPU), 1)
-	@echo "NVIDIA GPU detected, using docker-compose-gpu.yml"
-	docker compose -f docker-compose-gpu.yml up --build --attach ner-gpu
-else
-	@echo "No NVIDIA GPU detected, using docker-compose.yml"
-	docker compose -f docker-compose.yml up --build --attach ner
-endif
+	if [ "{{HAS_GPU}}" = "1" ]; then
+		echo "NVIDIA GPU detected, using docker-compose-gpu.yml"
+		docker compose -f docker-compose-gpu.yml up --build --attach ner-gpu
+	else
+		echo "No NVIDIA GPU detected, using docker-compose.yml"
+		docker compose -f docker-compose.yml up --build --attach ner
+	fi
 
 start_no_gpu:
 	mkdir -p ./data

@@ -52,6 +52,15 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
             )
             """
         )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS identifiers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                identifier TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         connection.commit()
         connection.close()
 
@@ -124,3 +133,30 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
 
     def delete_database(self):
         Path(ROOT_PATH, "data", self.database_name).unlink(missing_ok=True)
+
+    def save_identifier(self, identifier: str) -> bool:
+        if not identifier:
+            return False
+
+        if not self.exists_database():
+            self.create_database()
+
+        try:
+            connection, cursor = self.get_connection()
+            cursor.execute("INSERT OR IGNORE INTO identifiers (identifier) VALUES (?)", (identifier,))
+            connection.commit()
+            connection.close()
+            return True
+        except Exception as e:
+            print(f"Error saving identifier: {e}")
+            return False
+
+    def is_processed(self, identifier: str) -> bool:
+        if not identifier or not self.exists_database():
+            return False
+
+        connection, cursor = self.get_connection()
+        cursor.execute("SELECT 1 FROM identifiers WHERE identifier = ?", (identifier,))
+        result = cursor.fetchone() is not None
+        connection.close()
+        return result

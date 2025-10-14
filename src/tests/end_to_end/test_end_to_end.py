@@ -266,3 +266,37 @@ class TestEndToEnd(TestCase):
             self.assertEqual(expected_segment["pdf_name"], segment["pdf_name"])
             self.assertEqual(expected_segment["segment_number"], segment["segment_number"])
             self.assertEqual(expected_segment["text"], segment["text"])
+
+    def test_is_processed_endpoint(self):
+        namespace = "test_is_processed_namespace"
+        identifier_1 = "test_identifier_123"
+        identifier_2 = "test_identifier_456"
+
+        requests.post(self.service_url + "/delete_namespace", data={"namespace": namespace})
+
+        result = requests.post(self.service_url + "/is_processed", data={"namespace": namespace, "identifier": identifier_1})
+        self.assertEqual(200, result.status_code)
+        self.assertFalse(result.json())
+
+        text = "Test document with Tokyo and Maria Rodriguez"
+        data = {"text": text, "namespace": namespace, "identifier": identifier_1}
+        result = requests.post(self.service_url, data=data)
+        self.assertEqual(200, result.status_code)
+
+        result = requests.post(self.service_url + "/is_processed", data={"namespace": namespace, "identifier": identifier_1})
+        self.assertEqual(200, result.status_code)
+        self.assertTrue(result.json())
+
+        result = requests.post(self.service_url + "/is_processed", data={"namespace": namespace, "identifier": identifier_2})
+        self.assertEqual(200, result.status_code)
+        self.assertFalse(result.json())
+
+        result = requests.post(self.service_url + "/is_processed", data={"namespace": namespace})
+        self.assertEqual(200, result.status_code)
+        self.assertFalse(result.json())
+
+        result = requests.post(self.service_url + "/is_processed", data={"identifier": identifier_1})
+        self.assertEqual(200, result.status_code)
+        self.assertFalse(result.json())
+
+        requests.post(self.service_url + "/delete_namespace", data={"namespace": namespace})
