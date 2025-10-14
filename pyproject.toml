@@ -75,9 +75,6 @@ ner_in_docker = "src"
 "ner_in_docker.ports" = "src/ports"
 "ner_in_docker.use_cases" = "src/use_cases"
 
-[tool.setuptools.py-modules]
-# Single-file modules at the root of src/ will be included automatically
-
 [tool.setuptools.package-data]
 "*" = ["*.txt", "*.md", "*.json", "*.xml"]
 
