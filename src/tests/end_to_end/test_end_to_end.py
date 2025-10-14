@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest import TestCase
 import requests
 
-from configuration.configuration import ROOT_PATH, SRC_PATH
+from configuration import ROOT_PATH, SRC_PATH
 
 
 class TestEndToEnd(TestCase):

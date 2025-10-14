@@ -16,8 +16,8 @@ RUN uv pip install --upgrade pip
 RUN uv pip install -r requirements.txt
 
 WORKDIR /app
-COPY --chown=python:python ./src/. ./src
 COPY --chown=python:python ./models/. ./models/
+COPY --chown=python:python ./src/. ./src
 RUN mkdir -p data
 RUN python src/download_models.py
 

@@ -21,20 +21,25 @@ jobs:
       with:
         python-version: '3.11'
 
+    - name: Install just commander
+      run: | 
+          sudo apt-get update
+          sudo apt-get install -y just
+
     - name: Free up space
-      run: make free_up_space
+      run: just free_up_space
 
     - name: Install venv
-      run: make install_venv
+      run: just install_venv
 
     - name: Lint with black
-      run: make check_format
+      run: just check_format
 
     - name: Download models
-      run: make download_models
+      run: just download_models
 
     - name: Start service
-      run: make start_detached
+      run: just start_detached
 
     - name: Check API ready
       uses: emilioschepis/wait-for-endpoint@v1.0.3
@@ -46,4 +51,4 @@ jobs:
         interval: 500
 
     - name: Test with unittest
-      run: make test
+      run: just test

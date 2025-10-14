@@ -1,6 +1,6 @@
 import requests
 from pathlib import Path
-from configuration.configuration import PDF_ANALYSIS_SERVICE_URL
+from configuration import PDF_ANALYSIS_SERVICE_URL
 from domain.Segment import Segment
 from ports.PDFToSegmentsRepository import PDFToSegmentsRepository
 

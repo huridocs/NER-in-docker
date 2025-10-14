@@ -1,7 +1,7 @@
 from unittest import TestCase
 from pathlib import Path
 
-from configuration.configuration import ROOT_PATH
+from configuration import ROOT_PATH
 from domain.BoundingBox import BoundingBox
 from domain.NamedEntity import NamedEntity
 from domain.NamedEntityType import NamedEntityType

@@ -1,4 +1,4 @@
-from configuration.configuration import TITLES_TYPES
+from configuration import TITLES_TYPES
 from domain.NamedEntityGroup import NamedEntityGroup
 from domain.NamedEntityType import NamedEntityType
 from domain.NamedEntity import NamedEntity
