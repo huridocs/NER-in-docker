@@ -56,8 +56,8 @@ Repository = "https://github.com/huridocs/NER-in-docker"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src.domain*", "src.drivers.rest.response_entities*"]
+where = ["src"]
+include = ["domain*", "drivers.rest.response_entities*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.txt", "*.md", "*.json", "*.xml"]
