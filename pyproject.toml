@@ -54,11 +54,9 @@ Repository = "https://github.com/huridocs/NER-in-docker"
 
 [tool.setuptools]
 include-package-data = true
-packages = ["ner_in_docker"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["ner_in_docker*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.txt", "*.md", "*.json", "*.xml"]
