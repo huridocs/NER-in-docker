@@ -1,4 +1,6 @@
 from pathlib import Path
+
+import dateparser
 from dateparser.search import search_dates
 from gliner import GLiNER
 from ner_in_docker.configuration import MODELS_PATH
@@ -35,14 +37,14 @@ class GetGLiNEREntitiesUseCase:
     def convert_to_named_entity_type(window_entities: list[dict]):
         result = []
         for entity in window_entities:
-            result.append(
-                NamedEntity(
-                    type=NamedEntityType.DATE,
-                    text=entity["text"],
-                    character_start=entity["start"],
-                    character_end=entity["end"],
-                ).get_with_normalize_entity_text()
+            named_entity = NamedEntity(
+                type=NamedEntityType.DATE, text=entity["text"], character_start=entity["start"], character_end=entity["end"]
             )
+            try:
+                named_entity = named_entity.get_with_normalize_entity_text()
+                result.append(named_entity)
+            except Exception:
+                pass
         return result
 
     def iterate_through_windows(self, words):
