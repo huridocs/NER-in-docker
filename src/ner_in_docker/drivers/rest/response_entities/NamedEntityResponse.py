@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+
+from ner_in_docker.domain.BoundingBox import BoundingBox
 from ner_in_docker.domain.NamedEntity import NamedEntity
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 from ner_in_docker.drivers.rest.response_entities.SegmentResponse import SegmentResponse
@@ -12,6 +14,7 @@ class NamedEntityResponse(BaseModel):
     character_end: int
     relevance_percentage: int = 0
     segment: SegmentResponse
+    text_positions: list[BoundingBox] = []
     source_id: str
 
     @staticmethod
@@ -25,4 +28,5 @@ class NamedEntityResponse(BaseModel):
             relevance_percentage=named_entity.relevance_percentage,
             segment=SegmentResponse.from_named_entity(named_entity),
             source_id=named_entity.segment.source_id,
+            text_positions=named_entity.text_positions,
         )

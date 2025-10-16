@@ -9,6 +9,7 @@ from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesS
 from ner_in_docker.domain.Segment import Segment
 from ner_in_docker.drivers.rest.catch_exceptions import catch_exceptions
 from ner_in_docker.drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
+from ner_in_docker.use_cases.GetPositionsUseCase import GetPositionsUseCase
 from ner_in_docker.use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
 from ner_in_docker.use_cases.NamedEntitiesUseCase import NamedEntitiesUseCase
 from ner_in_docker.use_cases.ReferencesUseCase import ReferencesUseCase
@@ -40,6 +41,7 @@ async def get_named_entities(
     file: UploadFile = File(None),
     fast: bool = Form(False),
 ):
+    pdf_path = None
     if file:
         pdf_path = pdf_content_to_pdf_path(await file.read(), file.filename)
         segments = PDFLayoutAnalysisRepository().get_segments(pdf_path, fast)
@@ -50,6 +52,8 @@ async def get_named_entities(
 
     named_entities = NamedEntitiesUseCase().get_entities_from_segments(segments)
     named_entities += ReferencesUseCase(entities_from_db).get_entities_from_segments(segments)
+    if file and pdf_path:
+        named_entities = GetPositionsUseCase(PDFLayoutAnalysisRepository(), pdf_path).add_positions(named_entities)
     named_entities_groups = GroupNamedEntitiesUseCase(entities_from_db).group(named_entities)
 
     if namespace:

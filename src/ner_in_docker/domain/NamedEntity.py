@@ -5,6 +5,7 @@ from unidecode import unidecode
 import dateparser
 
 from ner_in_docker.configuration import TITLES_TYPES, SEPARATOR
+from ner_in_docker.domain.BoundingBox import BoundingBox
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 import country_converter as coco
 from ner_in_docker.domain.Segment import Segment
@@ -24,6 +25,7 @@ class NamedEntity(BaseModel):
     first_type_appearance: bool = False
     last_type_appearance: bool = False
     segment: Segment = None
+    text_positions: list[BoundingBox] = []
     relevance_percentage: int = 0
 
     @staticmethod
@@ -110,3 +112,14 @@ class NamedEntity(BaseModel):
         else:
             self.first_type_appearance = False
             self.last_type_appearance = False
+
+    def add_positions_from_pdf_words(self, pdf_words: list):
+        if not self.segment or not self.segment.bounding_box:
+            return self
+
+        bounding_boxes = []
+        for position in pdf_words:
+            bounding_boxes.append(position.bounding_box)
+
+        self.text_positions = bounding_boxes
+        return self

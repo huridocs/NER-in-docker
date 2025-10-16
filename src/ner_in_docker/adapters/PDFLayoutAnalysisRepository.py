@@ -1,6 +1,7 @@
 import requests
 from pathlib import Path
 from ner_in_docker.configuration import PDF_ANALYSIS_SERVICE_URL
+from ner_in_docker.domain.PdfWord import PdfWord
 from ner_in_docker.domain.Segment import Segment
 from ner_in_docker.ports.PDFToSegmentsRepository import PDFToSegmentsRepository
 
@@ -18,3 +19,12 @@ class PDFLayoutAnalysisRepository(PDFToSegmentsRepository):
                 Segment.from_segment_box(segment_box, pdf_path.name, index + 1)
                 for index, segment_box in enumerate(segment_boxes)
             ]
+
+    @staticmethod
+    def get_word_positions(pdf_path: Path) -> list[PdfWord]:
+        with open(pdf_path, "rb") as pdf_file:
+            files = {"file": pdf_file}
+            response = requests.post(PDF_ANALYSIS_SERVICE_URL + "/word_positions", files=files)
+            response.raise_for_status()
+            pdf_words = response.json()
+            return [PdfWord(**segment_box) for segment_box in pdf_words]
