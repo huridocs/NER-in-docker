@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from ner_in_docker.domain.PdfWord import PdfWord
+from pdf_features.PdfWord import PdfWord
+
 from ner_in_docker.domain.Segment import Segment
 
 

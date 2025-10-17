@@ -1,6 +1,8 @@
 FROM pytorch/pytorch:2.7.1-cuda11.8-cudnn9-runtime
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+RUN apt-get update && apt-get install -y git
+
 RUN mkdir -p /app/src
 
 RUN addgroup --system python && adduser --system --group python

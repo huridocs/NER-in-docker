@@ -1,15 +1,16 @@
 from dateparser.search import search_dates
 from dateparser_data.settings import default_parsers
+from pdf_features.Rectangle import Rectangle
+from pdf_features.PdfWord import PdfWord
+from pdf_token_type_labels import TokenType
 from pydantic import BaseModel
 from unidecode import unidecode
 import dateparser
 
 from ner_in_docker.configuration import TITLES_TYPES, SEPARATOR
-from ner_in_docker.domain.BoundingBox import BoundingBox
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 import country_converter as coco
 from ner_in_docker.domain.Segment import Segment
-from ner_in_docker.domain.TokenType import TokenType
 
 
 class NamedEntity(BaseModel):
@@ -25,7 +26,7 @@ class NamedEntity(BaseModel):
     first_type_appearance: bool = False
     last_type_appearance: bool = False
     segment: Segment = None
-    text_positions: list[BoundingBox] = []
+    text_positions: list[Rectangle] = []
     relevance_percentage: int = 0
 
     @staticmethod
@@ -113,7 +114,7 @@ class NamedEntity(BaseModel):
             self.first_type_appearance = False
             self.last_type_appearance = False
 
-    def add_positions_from_pdf_words(self, pdf_words: list):
+    def add_positions_from_pdf_words(self, pdf_words: list[PdfWord]) -> "NamedEntity":
         if not self.segment or not self.segment.bounding_box:
             return self
 

@@ -1,9 +1,9 @@
+from pdf_features import Rectangle
 from pydantic import BaseModel
 from ner_in_docker.domain.NamedEntity import NamedEntity
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 from typing import Optional
 from ner_in_docker.domain.Segment import Segment
-from ner_in_docker.domain.BoundingBox import BoundingBox
 
 
 class EntityPersistence(BaseModel):
@@ -35,7 +35,7 @@ class EntityPersistence(BaseModel):
             segment_number=self.segment_segment_number if self.segment_segment_number else 0,
             type=self.segment_type,
             source_id=self.segment_source_id if self.segment_source_id else "",
-            bounding_box=BoundingBox(
+            bounding_box=Rectangle.from_width_height(
                 left=self.segment_bounding_box_left if self.segment_bounding_box_left else 0,
                 top=self.segment_bounding_box_top if self.segment_bounding_box_top else 0,
                 width=self.segment_bounding_box_width if self.segment_bounding_box_width else 0,

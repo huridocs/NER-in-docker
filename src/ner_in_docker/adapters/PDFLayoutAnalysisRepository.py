@@ -1,7 +1,9 @@
 import requests
 from pathlib import Path
+
+from pdf_features.PdfWord import PdfWord
+
 from ner_in_docker.configuration import PDF_ANALYSIS_SERVICE_URL
-from ner_in_docker.domain.PdfWord import PdfWord
 from ner_in_docker.domain.Segment import Segment
 from ner_in_docker.ports.PDFToSegmentsRepository import PDFToSegmentsRepository
 

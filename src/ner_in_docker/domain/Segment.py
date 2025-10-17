@@ -1,5 +1,5 @@
+from pdf_features import Rectangle
 from pydantic import BaseModel
-from ner_in_docker.domain.BoundingBox import BoundingBox
 
 
 class Segment(BaseModel):
@@ -8,7 +8,7 @@ class Segment(BaseModel):
     segment_number: int
     type: str = "Text"
     source_id: str = ""
-    bounding_box: BoundingBox
+    bounding_box: Rectangle
 
     @staticmethod
     def from_segment_box(segment_box_dict: dict, source_id: str, segment_number: int):
@@ -18,7 +18,7 @@ class Segment(BaseModel):
             type=segment_box_dict.get("type", "Text"),
             segment_number=segment_number,
             source_id=source_id,
-            bounding_box=BoundingBox(
+            bounding_box=Rectangle.from_width_height(
                 left=int(segment_box_dict["left"]),
                 top=int(segment_box_dict["top"]),
                 width=int(segment_box_dict["width"]),
@@ -34,5 +34,5 @@ class Segment(BaseModel):
             segment_number=0,
             type="Text",
             source_id=source_id if source_id else "default",
-            bounding_box=BoundingBox(left=0, top=0, width=0, height=0),
+            bounding_box=Rectangle.from_width_height(left=0, top=0, width=0, height=0),
         )

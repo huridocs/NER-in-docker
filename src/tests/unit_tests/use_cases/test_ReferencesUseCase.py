@@ -1,12 +1,13 @@
 from unittest import TestCase
 from pathlib import Path
 
+from pdf_features import Rectangle
+from pdf_token_type_labels import TokenType
+
 from ner_in_docker.configuration import ROOT_PATH
-from ner_in_docker.domain.BoundingBox import BoundingBox
 from ner_in_docker.domain.NamedEntity import NamedEntity
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 from ner_in_docker.domain.Segment import Segment
-from ner_in_docker.domain.TokenType import TokenType
 from ner_in_docker.use_cases.ReferencesUseCase import ReferencesUseCase
 
 TEST_DATABASE_NAME = "test_pdf_use_case.db"
@@ -28,7 +29,7 @@ class TestReferencesUseCase(TestCase):
                 page_number=1,
                 segment_number=0,
                 source_id="test.pdf",
-                bounding_box=BoundingBox.from_coordinates(1, 2, 3, 4),
+                bounding_box=Rectangle.from_width_height(1, 2, 3, 4),
             ),
             Segment(
                 text="Reference to Test Title",
@@ -36,7 +37,7 @@ class TestReferencesUseCase(TestCase):
                 page_number=1,
                 segment_number=1,
                 source_id="test.pdf",
-                bounding_box=BoundingBox.from_coordinates(5, 6, 7, 8),
+                bounding_box=Rectangle.from_width_height(5, 6, 7, 8),
             ),
         ]
         references_use_case = ReferencesUseCase()

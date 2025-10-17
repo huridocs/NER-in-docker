@@ -3,7 +3,7 @@ from ner_in_docker.domain.NamedEntityGroup import NamedEntityGroup
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 from ner_in_docker.domain.NamedEntity import NamedEntity
 from ner_in_docker.domain.Segment import Segment
-from ner_in_docker.domain.TokenType import TokenType
+from pdf_token_type_labels import TokenType
 
 
 class ReferencesUseCase:

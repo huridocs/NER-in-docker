@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from ner_in_docker.domain.BoundingBox import BoundingBox
+from pdf_features import Rectangle
+
 from ner_in_docker.domain.Segment import Segment
 
 
@@ -31,7 +32,7 @@ class PersistenceReferenceDestination:
         )
 
     def get_segment(self) -> Segment:
-        bounding_box = BoundingBox(left=self.left, top=self.top, width=self.width, height=self.height)
+        bounding_box = Rectangle.from_width_height(left=self.left, top=self.top, width=self.width, height=self.height)
         return Segment(
             text=self.title,
             page_number=self.page_number,
