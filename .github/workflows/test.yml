@@ -35,9 +35,6 @@ jobs:
     - name: Lint with black
       run: just check_format
 
-    - name: Download models
-      run: just download_models
-
     - name: Start service
       run: just start_detached
 

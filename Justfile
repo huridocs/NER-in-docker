@@ -50,25 +50,38 @@ test:
 	. .venv/bin/activate; command cd src; command python -m pytest
 
 free_up_space:
-	df -h
-	sudo rm -rf /usr/share/dotnet
-	sudo rm -rf /opt/ghc
-	sudo rm -rf "/usr/local/share/boost"
-	sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-	sudo apt-get remove -y '^llvm-.*' || true
-	sudo apt-get remove -y 'php.*' || true
-	sudo apt-get remove -y google-cloud-sdk hhvm google-chrome-stable firefox mono-devel || true
-	sudo apt-get autoremove -y
-	sudo apt-get clean
-	sudo rm -rf /usr/share/dotnet
-	sudo rm -rf /usr/local/lib/android
-	sudo rm -rf /opt/hostedtoolcache/CodeQL
-	sudo rm -rf /usr/local/share/chromium
-	sudo rm -rf /usr/local/share/powershell
-	sudo rm -rf /usr/share/swift
-	sudo rm -rf /usr/local/julia*
-	sudo docker system prune --all --force
-	df -h
+    df -h
+    sudo rm -rf /usr/share/dotnet
+    sudo rm -rf /opt/ghc
+    sudo rm -rf "/usr/local/share/boost"
+    sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+    sudo apt-get remove -y '^llvm-.*' || true
+    sudo apt-get remove -y 'php.*' || true
+    sudo apt-get remove -y google-cloud-sdk hhvm google-chrome-stable firefox mono-devel || true
+    sudo apt-get autoremove -y
+    sudo apt-get clean
+    sudo rm -rf /usr/share/dotnet
+    sudo rm -rf /usr/local/lib/android
+    sudo rm -rf /opt/hostedtoolcache/CodeQL
+    sudo rm -rf /usr/local/share/chromium
+    sudo rm -rf /usr/local/share/powershell
+    sudo rm -rf /usr/share/swift
+    sudo rm -rf /usr/local/julia*
+    sudo rm -rf /opt/microsoft
+    sudo rm -rf /opt/az
+    sudo rm -rf /opt/pipx
+    sudo rm -rf /usr/local/.ghcup
+    sudo rm -rf /usr/local/aws-cli
+    sudo rm -rf /usr/local/share/vcpkg
+    sudo rm -rf /usr/share/miniconda
+    sudo rm -rf /home/linuxbrew
+    sudo rm -rf /opt/hostedtoolcache/*
+    sudo apt-get remove -y azure-cli || true
+    sudo apt-get remove -y '^dotnet-.*' || true
+    sudo apt-get remove -y '^aspnetcore-.*' || true
+    sudo apt-get remove -y powershell || true
+    sudo docker system prune --all --force --volumes
+    df -h
 
 start_detached:
 	mkdir -p ./models
