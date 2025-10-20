@@ -1,6 +1,11 @@
+import logging
+import time
+
 from ner_in_docker.domain.NamedEntity import NamedEntity
 from ner_in_docker.domain.NamedEntityGroup import NamedEntityGroup
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
+
+logger = logging.getLogger(__name__)
 
 
 class GroupNamedEntitiesUseCase:
@@ -27,16 +32,33 @@ class GroupNamedEntitiesUseCase:
             )
 
     def group(self, named_entities: list[NamedEntity]) -> list[NamedEntityGroup]:
+        start = time.time()
         self._calculate_relevance_scores(named_entities)
+        logger.info(f"Calculate relevance: {time.time() - start:.3f}s")
 
         for named_entity in named_entities:
+            iter_start = time.time()
             normalized_entity = named_entity.get_with_normalize_entity_text()
+            if time.time() - iter_start > 0.1:
+                logger.info(f"normalized_entity: {time.time() - iter_start:.3f}s")
 
+            iter_start = time.time()
             if self._try_assign_to_prior_group(normalized_entity):
+                if time.time() - iter_start > 0.1:
+                    logger.info(f"Prior continue group assignment: {time.time() - iter_start:.3f}s")
                 continue
 
+            if time.time() - iter_start > 0.1:
+                logger.info(f"Prior group assignment: {time.time() - iter_start:.3f}s")
+
+            iter_start = time.time()
             if self._try_assign_to_existing_group(normalized_entity):
+                if time.time() - iter_start > 0.1:
+                    logger.info(f"Existing continue group assignment: {time.time() - iter_start:.3f}s")
                 continue
+
+            if time.time() - iter_start > 0.1:
+                logger.info(f"Existing group assignment: {time.time() - iter_start:.3f}s")
 
             self._create_new_group_for_entity(normalized_entity)
 

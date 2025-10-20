@@ -6,11 +6,14 @@ from pdf_token_type_labels import TokenType
 from pydantic import BaseModel
 from unidecode import unidecode
 import dateparser
+import logging
 
 from ner_in_docker.configuration import TITLES_TYPES, SEPARATOR
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 import country_converter as coco
 from ner_in_docker.domain.Segment import Segment
+
+logging.getLogger("country_converter").setLevel(logging.ERROR)
 
 
 class NamedEntity(BaseModel):

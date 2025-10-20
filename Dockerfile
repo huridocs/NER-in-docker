@@ -13,6 +13,8 @@ ENV VIRTUAL_ENV=/app/.venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+ENV TZ=UTC
+
 COPY requirements.txt requirements.txt
 RUN uv pip install --upgrade pip
 RUN uv pip install -r requirements.txt
