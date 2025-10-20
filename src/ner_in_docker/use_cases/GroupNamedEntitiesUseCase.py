@@ -1,11 +1,6 @@
-import logging
-import time
-
 from ner_in_docker.domain.NamedEntity import NamedEntity
 from ner_in_docker.domain.NamedEntityGroup import NamedEntityGroup
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
-
-logger = logging.getLogger(__name__)
 
 
 class GroupNamedEntitiesUseCase:
@@ -16,7 +11,6 @@ class GroupNamedEntitiesUseCase:
         self.groups: dict[str, NamedEntityGroup] = dict()
 
     def _initialize_prior_groups(self):
-        """Initialize groups from prior entities, sorted by relevance."""
         sorted_prior_entities = sorted(self.prior_entities, key=lambda x: x.relevance_percentage, reverse=True)
         for prior_entity in sorted_prior_entities:
             group_name = prior_entity.group_name
@@ -32,33 +26,16 @@ class GroupNamedEntitiesUseCase:
             )
 
     def group(self, named_entities: list[NamedEntity]) -> list[NamedEntityGroup]:
-        start = time.time()
         self._calculate_relevance_scores(named_entities)
-        logger.info(f"Calculate relevance: {time.time() - start:.3f}s")
 
         for named_entity in named_entities:
-            iter_start = time.time()
             normalized_entity = named_entity.get_with_normalize_entity_text()
-            if time.time() - iter_start > 0.1:
-                logger.info(f"normalized_entity: {time.time() - iter_start:.3f}s")
 
-            iter_start = time.time()
             if self._try_assign_to_prior_group(normalized_entity):
-                if time.time() - iter_start > 0.1:
-                    logger.info(f"Prior continue group assignment: {time.time() - iter_start:.3f}s")
                 continue
 
-            if time.time() - iter_start > 0.1:
-                logger.info(f"Prior group assignment: {time.time() - iter_start:.3f}s")
-
-            iter_start = time.time()
             if self._try_assign_to_existing_group(normalized_entity):
-                if time.time() - iter_start > 0.1:
-                    logger.info(f"Existing continue group assignment: {time.time() - iter_start:.3f}s")
                 continue
-
-            if time.time() - iter_start > 0.1:
-                logger.info(f"Existing group assignment: {time.time() - iter_start:.3f}s")
 
             self._create_new_group_for_entity(normalized_entity)
 
@@ -84,7 +61,6 @@ class GroupNamedEntitiesUseCase:
         return False
 
     def _try_assign_to_existing_group(self, named_entity: NamedEntity) -> bool:
-        """Try to assign the named entity to an existing group. Returns True if assigned."""
         for group in self.groups.values():
             if group.belongs_to_group(named_entity):
                 self._assign_to_existing_group(named_entity, group)
@@ -92,15 +68,11 @@ class GroupNamedEntitiesUseCase:
         return False
 
     def _assign_to_existing_group(self, named_entity: NamedEntity, group: NamedEntityGroup):
-        """Assign the named entity to a specific existing group."""
-        # Update group name if the new entity has a better name
         better_group_name = self._choose_better_group_name(group.name, named_entity.text, named_entity.type)
         if better_group_name != group.name:
-            # Update the group name and key in the groups dictionary
             del self.groups[group.name]
             group.name = better_group_name
             self.groups[better_group_name] = group
-            # Update all entities in the group to have the new group name
             for entity in group.named_entities:
                 entity.group_name = better_group_name
 
@@ -110,7 +82,6 @@ class GroupNamedEntitiesUseCase:
 
     @staticmethod
     def _choose_better_group_name(current_name: str, candidate_name: str, entity_type: NamedEntityType) -> str:
-        """Choose the better group name between current and candidate based on entity type."""
         if entity_type in [NamedEntityType.LOCATION, NamedEntityType.PERSON, NamedEntityType.ORGANIZATION]:
             if len(candidate_name) > len(current_name):
                 return candidate_name
@@ -121,11 +92,9 @@ class GroupNamedEntitiesUseCase:
 
     @staticmethod
     def _determine_top_relevance_entity(current_top: NamedEntity, candidate: NamedEntity) -> NamedEntity:
-        """Determine which entity has higher relevance percentage."""
         return current_top if current_top.relevance_percentage > candidate.relevance_percentage else candidate
 
     def _create_new_group_for_entity(self, named_entity: NamedEntity):
-        """Create a new group for the named entity using the appropriate group identifier."""
         group_name = self._get_group_name_for_entity(named_entity)
         named_entity.group_name = group_name
 
@@ -135,7 +104,6 @@ class GroupNamedEntitiesUseCase:
 
     @staticmethod
     def _get_group_name_for_entity(named_entity: NamedEntity) -> str:
-        """Get the appropriate group name for a named entity based on its type."""
         if named_entity.type == NamedEntityType.DATE and named_entity.normalized_text:
             return named_entity.normalized_text
 
