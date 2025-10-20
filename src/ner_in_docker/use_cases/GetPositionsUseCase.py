@@ -10,7 +10,7 @@ class GetPositionsUseCase:
     def __init__(self, pdf_to_segments_repository: PDFToSegmentsRepository, pdf_path: Path):
         self.pdf_to_segments_repository = pdf_to_segments_repository
         self.pdf_words = self.pdf_to_segments_repository.get_word_positions(pdf_path)
-        self.pdf_text_position = PdfTextPosition(None, self.pdf_words)
+        self.pdf_text_position = PdfTextPosition(self.pdf_words)
 
     def add_positions(self, named_entities: list[NamedEntity]) -> list:
         for entity in named_entities:
