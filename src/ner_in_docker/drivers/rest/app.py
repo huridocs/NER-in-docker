@@ -3,7 +3,9 @@ import tempfile
 import uuid
 from pathlib import Path
 from fastapi import FastAPI, Form, UploadFile, File
+from starlette.responses import FileResponse
 from ner_in_docker.adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
+from ner_in_docker.adapters.PDFVisualizationRepository import PDFVisualizationRepository
 from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
 
 from ner_in_docker.domain.Segment import Segment
@@ -13,6 +15,7 @@ from ner_in_docker.use_cases.GetPositionsUseCase import GetPositionsUseCase
 from ner_in_docker.use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
 from ner_in_docker.use_cases.NamedEntitiesUseCase import NamedEntitiesUseCase
 from ner_in_docker.use_cases.ReferencesUseCase import ReferencesUseCase
+from ner_in_docker.use_cases.VisualizeEntitiesUseCase import VisualizeEntitiesUseCase
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -80,3 +83,19 @@ async def is_processed(namespace: str = Form(None), identifier: str = Form(None)
 
     exists = SQLiteEntitiesStoreRepository(namespace).is_processed(identifier)
     return exists
+
+
+@app.post("/visualize")
+@catch_exceptions
+async def visualize(file: UploadFile = File(...), fast: bool = Form(False)):
+    pdf_path = pdf_content_to_pdf_path(await file.read(), file.filename)
+    segments = PDFLayoutAnalysisRepository().get_segments(pdf_path, fast)
+
+    named_entities = NamedEntitiesUseCase().get_entities_from_segments(segments)
+    named_entities = GetPositionsUseCase(PDFLayoutAnalysisRepository(), pdf_path).add_positions(named_entities)
+
+    annotated_pdf_path = VisualizeEntitiesUseCase(PDFVisualizationRepository()).create_annotated_pdf(
+        pdf_path, named_entities
+    )
+
+    return FileResponse(path=annotated_pdf_path, media_type="application/pdf", filename=f"annotated_{file.filename}")

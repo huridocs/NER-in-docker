@@ -127,3 +127,10 @@ class NamedEntity(BaseModel):
 
         self.text_positions = bounding_boxes
         return self
+
+    def has_iso_code(self):
+        if self.type != NamedEntityType.LOCATION:
+            return True
+
+        iso_3 = coco.convert(names=[self.text], to="ISO3")
+        return iso_3 != "not found"

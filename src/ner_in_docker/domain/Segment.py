@@ -9,6 +9,8 @@ class Segment(BaseModel):
     type: str = "Text"
     source_id: str = ""
     bounding_box: Rectangle
+    page_width: int = 0
+    page_height: int = 0
 
     @staticmethod
     def from_segment_box(segment_box_dict: dict, source_id: str, segment_number: int):
@@ -24,6 +26,8 @@ class Segment(BaseModel):
                 width=int(segment_box_dict["width"]),
                 height=int(segment_box_dict["height"]),
             ),
+            page_width=segment_box_dict.get("page_width", 0),
+            page_height=segment_box_dict.get("page_height", 0),
         )
 
     @staticmethod

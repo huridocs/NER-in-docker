@@ -60,7 +60,32 @@ curl -X POST http://localhost:8000/ \
   -F "fast=true"
 ```
 
-#### 2. `/delete_namespace` (POST)
+#### 2. `/visualize` (POST)
+Extract named entities from a PDF and return an annotated PDF with visual highlights.
+
+**Parameters:**
+- `file` (PDF, required): PDF file to analyze (multipart/form-data).
+- `fast` (bool, optional): Use fast PDF segmentation (default: False).
+
+**Returns:**
+An annotated PDF file with colored rectangles highlighting each detected entity. Each entity type has a distinct color:
+- Person (PER): Blue
+- Organization (ORG): Red
+- Location (LOC): Green
+- Date (DAT): Orange
+- Law (LAW): Purple
+- Document Code (DOC): Teal
+- Reference (REF): Dark Orange
+
+**Example:**
+```bash
+curl -X POST http://localhost:8000/visualize \
+  -F "file=@/path/to/file.pdf" \
+  -F "fast=true" \
+  --output annotated_file.pdf
+```
+
+#### 3. `/delete_namespace` (POST)
 Delete all entities for a given namespace.
 
 **Parameters:**
@@ -72,7 +97,7 @@ curl -X POST http://localhost:8000/delete_namespace \
   -F "namespace=my_namespace"
 ```
 
-#### 3. `/` (GET)
+#### 4. `/` (GET)
 Returns Python version info (for health check).
 
 ---

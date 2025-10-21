@@ -333,12 +333,12 @@ def benchmark_grouping():
         sys.stdout.flush()
 
         entity_types = [
-            NamedEntityType.PERSON,
-            NamedEntityType.ORGANIZATION,
+            # NamedEntityType.PERSON,
+            # NamedEntityType.ORGANIZATION,
             NamedEntityType.LOCATION,
-            NamedEntityType.DATE,
-            NamedEntityType.LAW,
-            NamedEntityType.REFERENCE,
+            # NamedEntityType.DATE,
+            # NamedEntityType.LAW,
+            # NamedEntityType.REFERENCE,
         ]
 
         results = []

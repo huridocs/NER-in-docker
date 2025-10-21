@@ -25,7 +25,8 @@ dependencies = [
     "country_converter==1.3",
     "huggingface-hub==0.27.1",
     "requests==2.32.5",
-    "torch==2.7.1"
+    "torch==2.7.1",
+    "pdf-annotate==0.12.0"
 ]
 
 [project.urls]

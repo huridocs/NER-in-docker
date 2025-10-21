@@ -38,9 +38,20 @@ class GetFlairEntitiesUseCase:
             )
         return result
 
+    @staticmethod
+    def remove_no_iso_locations(entities: list[NamedEntity]) -> list[NamedEntity]:
+        filtered_entities = []
+        for entity in entities:
+            if entity.type == NamedEntityType.LOCATION:
+                if not entity.has_iso_code():
+                    continue
+            filtered_entities.append(entity)
+        return filtered_entities
+
     def get_entities(self, text: str) -> list[NamedEntity]:
         sentence = Sentence(text)
         flair_model.predict(sentence)
         flair_raw_result: list[Span] = sentence.get_spans("ner")
         entities = self.convert_to_named_entity_type(flair_raw_result)
-        return self.remove_overlapping_entities(entities)
+        entities = self.remove_overlapping_entities(entities)
+        return entities

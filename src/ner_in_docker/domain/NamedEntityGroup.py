@@ -98,7 +98,6 @@ class NamedEntityGroup(BaseModel):
         # Use similarity logic for PERSON, LOCATION, ORGANIZATION
         if self.type in [NamedEntityType.PERSON, NamedEntityType.LOCATION, NamedEntityType.ORGANIZATION]:
             return self.is_similar_entity(named_entity)
-        # Fallback to exact match for other types
         return self.is_exact_match(named_entity)
 
     def is_same_group(self, other_group: "NamedEntityGroup") -> bool:
