@@ -6,8 +6,9 @@ from ner_in_docker.use_cases.GetGLiNEREntitiesUseCase import GetGLiNEREntitiesUs
 
 
 class NamedEntitiesUseCase:
-    def __init__(self):
-        self.date_extractor = GetGLiNEREntitiesUseCase()
+    def __init__(self, language: str = "en"):
+        self.language = language
+        self.date_extractor = GetGLiNEREntitiesUseCase(language)
         self.entity_extractor = GetFlairEntitiesUseCase()
         self.document_code_extractor = GetDocumentCodeUseCase()
 

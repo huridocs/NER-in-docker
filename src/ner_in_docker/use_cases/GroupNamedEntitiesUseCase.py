@@ -4,8 +4,9 @@ from ner_in_docker.domain.NamedEntityType import NamedEntityType
 
 
 class GroupNamedEntitiesUseCase:
-    def __init__(self, prior_entities: list[NamedEntity] = None):
+    def __init__(self, prior_entities: list[NamedEntity] = None, language: str = "en"):
         self.prior_entities = prior_entities if prior_entities else []
+        self.language = language
         self.prior_groups: dict[str, NamedEntityGroup] = dict()
         self._initialize_prior_groups()
         self.groups: dict[str, NamedEntityGroup] = dict()
@@ -29,7 +30,7 @@ class GroupNamedEntitiesUseCase:
         self._calculate_relevance_scores(named_entities)
 
         for named_entity in named_entities:
-            normalized_entity = named_entity.get_with_normalize_entity_text()
+            normalized_entity = named_entity.get_with_normalize_entity_text(self.language)
 
             if self._try_assign_to_prior_group(normalized_entity):
                 continue

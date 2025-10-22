@@ -55,15 +55,19 @@ class NamedEntity(BaseModel):
         iso_3 = coco.convert(names=[text], to="ISO3")
         return iso_3 if iso_3 != "not found" else self.normalize_text(text)
 
-    def normalize_date(self, text):
+    def normalize_date(self, text, language: str = "en"):
         if self.normalized_text:
             return self.normalized_text
 
         parsers = [parser for parser in default_parsers if parser != "relative-time"]
         settings = {"STRICT_PARSING": True, "PARSERS": parsers}
-        return dateparser.parse(text).strftime("%Y-%m-%d") if search_dates(self.text, settings=settings) else self.text
+        return (
+            dateparser.parse(text, languages=[language]).strftime("%Y-%m-%d")
+            if search_dates(self.text, languages=[language], settings=settings)
+            else self.text
+        )
 
-    def get_with_normalize_entity_text(self):
+    def get_with_normalize_entity_text(self, language: str = "en"):
         if self.type == NamedEntityType.REFERENCE:
             return self
 
@@ -71,7 +75,7 @@ class NamedEntity(BaseModel):
             NamedEntityType.PERSON: self.normalize_text,
             NamedEntityType.ORGANIZATION: self.normalize_text,
             NamedEntityType.LOCATION: self.normalize_location,
-            NamedEntityType.DATE: self.normalize_date,
+            NamedEntityType.DATE: lambda x: self.normalize_date(x, language),
             NamedEntityType.LAW: self.normalize_text,
             NamedEntityType.DOCUMENT_CODE: lambda x: x.strip(),
         }

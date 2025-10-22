@@ -44,6 +44,7 @@ async def get_named_entities(
     text: str = Form(None),
     file: UploadFile = File(None),
     fast: bool = Form(False),
+    language: str = Form("en"),
 ):
     pdf_path = None
     if file:
@@ -54,11 +55,11 @@ async def get_named_entities(
 
     entities_from_db = SQLiteEntitiesStoreRepository(namespace).get_entities() if namespace else list()
 
-    named_entities = NamedEntitiesUseCase().get_entities_from_segments(segments)
+    named_entities = NamedEntitiesUseCase(language).get_entities_from_segments(segments)
     named_entities += ReferencesUseCase(entities_from_db).get_entities_from_segments(segments)
     if file and pdf_path:
         named_entities = GetPositionsUseCase(PDFLayoutAnalysisRepository(), pdf_path).add_positions(named_entities)
-    named_entities_groups = GroupNamedEntitiesUseCase(entities_from_db).group(named_entities)
+    named_entities_groups = GroupNamedEntitiesUseCase(entities_from_db, language).group(named_entities)
 
     if namespace:
         repository = SQLiteEntitiesStoreRepository(namespace)
@@ -88,11 +89,11 @@ async def is_processed(namespace: str = Form(None), identifier: str = Form(None)
 
 @app.post("/visualize")
 @catch_exceptions
-async def visualize(file: UploadFile = File(...), fast: bool = Form(False)):
+async def visualize(file: UploadFile = File(...), fast: bool = Form(False), language: str = Form("en")):
     pdf_path = pdf_content_to_pdf_path(await file.read(), file.filename)
     segments = PDFLayoutAnalysisRepository().get_segments(pdf_path, fast)
 
-    named_entities = NamedEntitiesUseCase().get_entities_from_segments(segments)
+    named_entities = NamedEntitiesUseCase(language).get_entities_from_segments(segments)
     named_entities = GetPositionsUseCase(PDFLayoutAnalysisRepository(), pdf_path).add_positions(named_entities)
 
     annotated_pdf_path = VisualizeEntitiesUseCase(PDFVisualizationRepository()).create_annotated_pdf(

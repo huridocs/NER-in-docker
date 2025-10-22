@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import dateparser
 from dateparser.search import search_dates
 from gliner import GLiNER
 from ner_in_docker.configuration import MODELS_PATH
@@ -16,7 +15,8 @@ class GetGLiNEREntitiesUseCase:
     WINDOW_SIZE = 20
     SLIDE_SIZE = 10
 
-    def __init__(self):
+    def __init__(self, language: str = "en"):
+        self.language = language
         self.entities: list[NamedEntity] = list()
 
     @staticmethod
@@ -33,15 +33,14 @@ class GetGLiNEREntitiesUseCase:
 
         return result
 
-    @staticmethod
-    def convert_to_named_entity_type(window_entities: list[dict]):
+    def convert_to_named_entity_type(self, window_entities: list[dict]):
         result = []
         for entity in window_entities:
             named_entity = NamedEntity(
                 type=NamedEntityType.DATE, text=entity["text"], character_start=entity["start"], character_end=entity["end"]
             )
             try:
-                named_entity = named_entity.get_with_normalize_entity_text()
+                named_entity = named_entity.get_with_normalize_entity_text(self.language)
                 result.append(named_entity)
             except Exception:
                 pass
@@ -78,7 +77,7 @@ class GetGLiNEREntitiesUseCase:
         self.entities: list[NamedEntity] = list()
         words = text.split()
         self.iterate_through_windows(words)
-        self.entities = [e for e in self.entities if search_dates(e.text)]
+        self.entities = [e for e in self.entities if search_dates(e.text, languages=[self.language])]
         self.entities = self.remove_overlapping_entities(self.entities)
         self.entities = self.remove_uncompleted_dates(self.entities)
         return self.entities
