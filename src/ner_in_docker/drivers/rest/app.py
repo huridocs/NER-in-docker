@@ -4,7 +4,6 @@ import uuid
 from pathlib import Path
 from fastapi import FastAPI, Form, UploadFile, File
 from starlette.responses import FileResponse
-from ner_in_docker.adapters.GeolocationRepository import GeolocationRepository
 from ner_in_docker.adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
 from ner_in_docker.adapters.PDFVisualizationRepository import PDFVisualizationRepository
 from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
@@ -12,6 +11,7 @@ from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesS
 from ner_in_docker.domain.Segment import Segment
 from ner_in_docker.drivers.rest.catch_exceptions import catch_exceptions
 from ner_in_docker.drivers.rest.response_entities.NamedEntitiesResponse import NamedEntitiesResponse
+from ner_in_docker.use_cases.GetGeolocationUseCase import GetGeolocationUseCase
 from ner_in_docker.use_cases.GetPositionsUseCase import GetPositionsUseCase
 from ner_in_docker.use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
 from ner_in_docker.use_cases.NamedEntitiesUseCase import NamedEntitiesUseCase
@@ -106,4 +106,4 @@ async def visualize(file: UploadFile = File(...), fast: bool = Form(False), lang
 @app.post("/geolocation")
 @catch_exceptions
 async def geolocation(location: str = Form(...)):
-    return GeolocationRepository().get_coordinates(location)
+    return GetGeolocationUseCase().get_coordinates(location)
