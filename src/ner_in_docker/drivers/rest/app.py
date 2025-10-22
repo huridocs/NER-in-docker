@@ -4,6 +4,7 @@ import uuid
 from pathlib import Path
 from fastapi import FastAPI, Form, UploadFile, File
 from starlette.responses import FileResponse
+from ner_in_docker.adapters.GeolocationRepository import GeolocationRepository
 from ner_in_docker.adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
 from ner_in_docker.adapters.PDFVisualizationRepository import PDFVisualizationRepository
 from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
@@ -99,3 +100,9 @@ async def visualize(file: UploadFile = File(...), fast: bool = Form(False)):
     )
 
     return FileResponse(path=annotated_pdf_path, media_type="application/pdf", filename=f"annotated_{file.filename}")
+
+
+@app.post("/geolocation")
+@catch_exceptions
+async def geolocation(location: str = Form(...)):
+    return GeolocationRepository().get_coordinates(location)
