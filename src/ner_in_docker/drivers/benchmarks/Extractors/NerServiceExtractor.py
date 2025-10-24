@@ -5,7 +5,7 @@ from ner_in_docker.drivers.benchmarks.EntityExtractor import EntityExtractor
 from ner_in_docker.drivers.benchmarks.ExtractedEntity import ExtractedEntity
 
 
-class NerServiceClient(EntityExtractor):
+class NerServiceExtractor(EntityExtractor):
     def __init__(self, service_url: str = "http://localhost:5070/", namespace: str = "benchmark"):
         self.service_url = service_url
         self.namespace = namespace

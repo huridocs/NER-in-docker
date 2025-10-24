@@ -4,3 +4,4 @@ black==24.10.0
 httpx==0.28.1
 requests==2.32.5
 datasets==4.2.0
+ollama==0.6.0
