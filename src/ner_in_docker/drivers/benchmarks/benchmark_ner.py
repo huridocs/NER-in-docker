@@ -5,14 +5,14 @@ from pathlib import Path
 
 from ner_in_docker.configuration import DATA_PATH
 from ner_in_docker.drivers.benchmarks.BenchmarkRunner import BenchmarkRunner
-from ner_in_docker.drivers.benchmarks.Extractors.QwenExtractor import QwenExtractor
+from ner_in_docker.drivers.benchmarks.Extractors.LlamaExtractor import LlamaExtractor
 from ner_in_docker.drivers.benchmarks.OntoNotesParser import OntoNotesParser, TARGET_ENTITIES
 
 DATA_DIR = Path(DATA_PATH, "conll-2012", "v12", "data", "test")
 TARGET_ENTITIES_PER_TYPE = 10
 
 EXTRACTORS = [
-    QwenExtractor(),
+    LlamaExtractor(),
 ]
 
 

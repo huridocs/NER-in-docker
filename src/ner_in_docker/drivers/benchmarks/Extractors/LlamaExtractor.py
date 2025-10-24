@@ -6,15 +6,15 @@ from ner_in_docker.drivers.benchmarks.EntityExtractor import EntityExtractor
 from ner_in_docker.drivers.benchmarks.ExtractedEntity import ExtractedEntity
 
 
-class QwenExtractor(EntityExtractor):
+class LlamaExtractor(EntityExtractor):
 
-    def __init__(self, model_name: str = "qwen3:8b", host: str = "http://localhost:11434"):
+    def __init__(self, model_name: str = "llama3.1:8b", host: str = "http://localhost:11434"):
         self.model_name = model_name
         self.host = host
         self.client = Client(host=host)
 
     def get_name(self) -> str:
-        return f"Qwen LLM ({self.model_name})"
+        return f"Llama LLM ({self.model_name})"
 
     def extract(self, text: str) -> List[ExtractedEntity]:
 
@@ -28,14 +28,13 @@ Task: Extract entities of these types:
 Instructions:
 1. Find ALL entity mentions in the text
 2. Return ONLY a valid JSON array
-3. Each entity must have: text, type, start, end
+3. Each entity must have: text, type
 4. Do NOT include markdown, explanations, or extra text
-5. Position indexes are character positions (0-based)
 
 Example output format:
 [
-{{"text": "John Doe", "type": "PERSON", "start": 0, "end": 8}},
-{{"text": "New York", "type": "LOCATION", "start": 20, "end": 28}}
+{{"text": "John Doe", "type": "PERSON"}},
+{{"text": "New York", "type": "LOCATION"}}
 ]
 
 Text to analyze:
@@ -43,9 +42,7 @@ Text to analyze:
 
 Output (JSON array only):"""
 
-        response = self.client.chat(
-            model=self.model_name, messages=[{"role": "user", "content": prompt}], options={"temperature": 0.1}
-        )
+        response = self.client.chat(model=self.model_name, messages=[{"role": "user", "content": prompt}])
 
         response_text = response["message"]["content"].strip()
 
@@ -106,3 +103,11 @@ Output (JSON array only):"""
         except Exception as e:
             print(f"Error parsing response: {{e}}")
             return []
+
+
+if __name__ == "__main__":
+    extractor = LlamaExtractor()
+    sample_text = "Barack Obama was born in Hawaii and served as the 44th President of the United States."
+    entities = extractor.extract(sample_text)
+    for entity in entities:
+        print(f"Entity: {entity.text}, Type: {entity.type}, Start: {entity.character_start}, End: {entity.character_end}")
