@@ -1,5 +1,7 @@
 from typing import List, Dict
 
+from ner_in_docker.drivers.benchmarks.ExtractedEntity import ExtractedEntity
+
 
 TARGET_ENTITIES = ["PERSON", "LOCATION", "ORGANIZATION"]
 
@@ -33,7 +35,7 @@ class NEREvaluator:
 
         return overlap_len / gt_len if gt_len > 0 else 0.0
 
-    def evaluate_paragraph(self, paragraph: Dict, predicted_entities: List[Dict]):
+    def evaluate_paragraph(self, paragraph: Dict, predicted_entities: List[ExtractedEntity]):
         ground_truth = paragraph["entities"]
 
         matched_gt = set()
@@ -44,18 +46,18 @@ class NEREvaluator:
             self.results[entity_type]["ground_truth_count"] += 1
 
         for pred_entity in predicted_entities:
-            entity_type = pred_entity.get("type", "").upper()
+            entity_type = pred_entity.type.upper()
             if entity_type in TARGET_ENTITIES:
                 self.results[entity_type]["predicted_count"] += 1
 
         for i, pred_entity in enumerate(predicted_entities):
-            pred_type = pred_entity.get("type", "").upper()
+            pred_type = pred_entity.type.upper()
 
             if pred_type not in TARGET_ENTITIES:
                 continue
 
-            pred_start = pred_entity.get("character_start", -1)
-            pred_end = pred_entity.get("character_end", -1)
+            pred_start = pred_entity.character_start
+            pred_end = pred_entity.character_end
 
             if pred_start < 0 or pred_end < 0:
                 continue
