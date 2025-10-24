@@ -10,6 +10,11 @@ from pathlib import Path
 
 
 def get_data():
+    data_path = Path(DATA_PATH) / "conll-2012"
+    if data_path.exists():
+        print("Data already exists. Skipping download.")
+        return
+
     data_url = "https://data.mendeley.com/public-files/datasets/zmycy7t9h9/files/b078e1c4-f7a4-4427-be7f-9389967831ef/file_downloaded"
     response = requests.get(data_url)
 
