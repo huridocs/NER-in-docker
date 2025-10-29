@@ -47,63 +47,113 @@ class OntoNotesParser:
                         continue
 
                     if current_sentence is None:
-                        current_sentence = {"words": [], "ne_tags": []}
+                        current_sentence = {"words": [], "ne_tags": [], "pos_tags": []}
 
                     word = parts[3]
+                    pos_tag = parts[4]
                     ne_tag = parts[10]
 
                     current_sentence["words"].append(word)
+                    current_sentence["pos_tags"].append(pos_tag)
                     current_sentence["ne_tags"].append(ne_tag)
 
         return documents
 
     def extract_entities_from_sentence(self, sentence: Dict) -> List[Dict]:
         entities = []
-        active_entities = {}
+        active_entity = None
         char_position = 0
 
-        for i, (word, tag) in enumerate(zip(sentence["words"], sentence["ne_tags"])):
+        pos_tags = sentence.get("pos_tags", [None] * len(sentence["words"]))
+
+        for i, (word, tag, pos) in enumerate(zip(sentence["words"], sentence["ne_tags"], pos_tags)):
             word_start = char_position
             word_end = char_position + len(word)
 
-            clean_tag = tag.replace("(", "").replace(")", "").replace("*", "").strip()
+            label = tag.strip("()*")
 
-            if "(" in tag and clean_tag:
-                entity_type = clean_tag
-                if entity_type in ENTITY_MAPPING:
-                    mapped_type = ENTITY_MAPPING[entity_type]
-                    active_entities[entity_type] = {
+            if "(" in tag:
+                if label and label in ENTITY_MAPPING:
+                    mapped_type = ENTITY_MAPPING[label]
+                    active_entity = {
                         "text": word,
                         "type": mapped_type,
                         "start": word_start,
                         "end": word_end,
-                        "words": [word],
-                        "word_indices": [i],
+                        "label": label,
                     }
+                else:
+                    active_entity = None
 
-            elif clean_tag and clean_tag in active_entities:
-                entity = active_entities[clean_tag]
-                entity["text"] += " " + word
-                entity["end"] = word_end
-                entity["words"].append(word)
-                entity["word_indices"].append(i)
+            elif active_entity is not None:
+                should_stop = self._should_stop_entity(word, pos, active_entity["type"])
 
-            if ")" in tag:
-                for entity_type in list(active_entities.keys()):
-                    entity = active_entities[entity_type]
-                    if "(" in tag or entity["word_indices"][-1] == i:
-                        entities.append(
-                            {"text": entity["text"], "type": entity["type"], "start": entity["start"], "end": entity["end"]}
-                        )
-                        del active_entities[entity_type]
-                        break
+                if should_stop:
+                    entities.append(
+                        {
+                            "text": active_entity["text"],
+                            "type": active_entity["type"],
+                            "start": active_entity["start"],
+                            "end": active_entity["end"],
+                        }
+                    )
+                    active_entity = None
+                else:
+                    active_entity["text"] += " " + word
+                    active_entity["end"] = word_end
+
+            if ")" in tag and active_entity is not None:
+                entities.append(
+                    {
+                        "text": active_entity["text"],
+                        "type": active_entity["type"],
+                        "start": active_entity["start"],
+                        "end": active_entity["end"],
+                    }
+                )
+                active_entity = None
 
             char_position = word_end + 1
 
-        for entity in active_entities.values():
-            entities.append({"text": entity["text"], "type": entity["type"], "start": entity["start"], "end": entity["end"]})
+        if active_entity is not None:
+            entities.append(
+                {
+                    "text": active_entity["text"],
+                    "type": active_entity["type"],
+                    "start": active_entity["start"],
+                    "end": active_entity["end"],
+                }
+            )
 
         return entities
+
+    def _should_stop_entity(self, word: str, pos_tag: str, entity_type: str) -> bool:
+        """
+        Determine if we should stop an entity based on POS tag and other heuristics.
+
+        Args:
+            word: The current word
+            pos_tag: The POS tag of the current word
+            entity_type: The type of the current entity (PERSON, LOCATION, ORGANIZATION)
+
+        Returns:
+            True if we should stop the entity, False otherwise
+        """
+        if pos_tag is None:
+            return False
+
+        if pos_tag == "POS":
+            return True
+
+        if entity_type == "PERSON":
+            if pos_tag in ["NN", "NNS"] and word.lower() not in ["jr", "sr", "jr.", "sr.", "ii", "iii", "iv"]:
+                return True
+
+        if entity_type == "ORGANIZATION":
+            if word.lower() in ["of", "the", "a", "an", "s"] and pos_tag not in ["NNP", "NNPS"]:
+                return True
+
+        return False
 
     def get_paragraphs_with_entities(self, target_entities_per_type: int = 10) -> List[Dict]:
         pattern = os.path.join(self.data_dir, "**/*.gold_conll")
@@ -132,25 +182,38 @@ class OntoNotesParser:
                         char_offset = 0
 
                         for sent in para_sentences:
-                            sent_text = " ".join(sent["words"])
-                            sent_text = sent_text.replace(" .", ".")
-                            sent_text = sent_text.replace(" ,", ",")
-                            sent_text = sent_text.replace(" !", "!")
-                            sent_text = sent_text.replace(" ?", "?")
-                            sent_text = sent_text.replace(" :", ":")
-                            sent_text = sent_text.replace(" ;", ";")
-                            sent_text = sent_text.replace("-LRB- ", "(")
-                            sent_text = sent_text.replace(" -RRB-", ")")
-                            sent_text = sent_text.replace("`` ", '"')
-                            sent_text = sent_text.replace(" ''", '"')
-
                             sent_entities = self.extract_entities_from_sentence(sent)
 
-                            for entity in sent_entities:
+                            sent_text = " ".join(sent["words"])
+
+                            def clean_text(text):
+                                text = text.replace(" .", ".")
+                                text = text.replace(" ,", ",")
+                                text = text.replace(" !", "!")
+                                text = text.replace(" ?", "?")
+                                text = text.replace(" :", ":")
+                                text = text.replace(" ;", ";")
+                                text = text.replace("-LRB- ", "(")
+                                text = text.replace(" -RRB-", ")")
+                                text = text.replace("`` ", '"')
+                                text = text.replace(" ''", '"')
+                                return text
+
+                            sent_text = clean_text(sent_text)
+
+                            sent_entities_sorted = sorted(sent_entities, key=lambda e: e["start"])
+                            search_start = 0
+
+                            for entity in sent_entities_sorted:
                                 if entity["type"] in TARGET_ENTITIES:
-                                    entity["start"] += char_offset
-                                    entity["end"] += char_offset
-                                    all_entities.append(entity)
+                                    entity_text = clean_text(entity["text"])
+                                    new_start = sent_text.find(entity_text, search_start)
+                                    if new_start != -1:
+                                        entity["text"] = entity_text
+                                        entity["start"] = new_start + char_offset
+                                        entity["end"] = new_start + len(entity_text) + char_offset
+                                        all_entities.append(entity)
+                                        search_start = new_start + len(entity_text)
 
                             text_parts.append(sent_text)
                             char_offset += len(sent_text) + 1
