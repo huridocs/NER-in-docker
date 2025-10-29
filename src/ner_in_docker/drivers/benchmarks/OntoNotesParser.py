@@ -1,7 +1,7 @@
 import glob
 import os
 import random
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 
 ENTITY_MAPPING = {
@@ -59,101 +59,79 @@ class OntoNotesParser:
 
         return documents
 
+    def _convert_to_bio_tags(self, ne_tags: List[str]) -> List[str]:
+        """
+        Convert CoNLL parenthesis format to BIO tags.
+        Based on the official OntoNotes implementation.
+
+        Examples:
+            "(PERSON)" -> "B-PERSON"
+            "(PERSON*" -> "B-PERSON"
+            "*" -> "I-{current_label}" (if inside a span) or "O" (if outside)
+            "*)" -> "I-{current_label}"
+            "*" (not in span) -> "O"
+        """
+        bio_tags = []
+        current_label: Optional[str] = None
+
+        for annotation in ne_tags:
+            label = annotation.strip("()*")
+
+            if "(" in annotation:
+                bio_tags.append(f"B-{label}")
+                current_label = label
+            elif current_label is not None:
+                bio_tags.append(f"I-{current_label}")
+            else:
+                bio_tags.append("O")
+
+            if ")" in annotation:
+                current_label = None
+
+        return bio_tags
+
     def extract_entities_from_sentence(self, sentence: Dict) -> List[Dict]:
+        bio_tags = self._convert_to_bio_tags(sentence["ne_tags"])
+
         entities = []
-        active_entity = None
+        current_entity = None
         char_position = 0
 
-        pos_tags = sentence.get("pos_tags", [None] * len(sentence["words"]))
-
-        for i, (word, tag, pos) in enumerate(zip(sentence["words"], sentence["ne_tags"], pos_tags)):
+        for i, (word, bio_tag) in enumerate(zip(sentence["words"], bio_tags)):
             word_start = char_position
             word_end = char_position + len(word)
 
-            label = tag.strip("()*")
+            if bio_tag.startswith("B-"):
+                if current_entity is not None:
+                    entities.append(current_entity)
 
-            if "(" in tag:
-                if label and label in ENTITY_MAPPING:
-                    mapped_type = ENTITY_MAPPING[label]
-                    active_entity = {
+                entity_label = bio_tag[2:]
+                if entity_label in ENTITY_MAPPING:
+                    current_entity = {
                         "text": word,
-                        "type": mapped_type,
+                        "type": ENTITY_MAPPING[entity_label],
                         "start": word_start,
                         "end": word_end,
-                        "label": label,
                     }
                 else:
-                    active_entity = None
+                    current_entity = None
 
-            elif active_entity is not None:
-                should_stop = self._should_stop_entity(word, pos, active_entity["type"])
+            elif bio_tag.startswith("I-"):
+                if current_entity is not None:
+                    current_entity["text"] += " " + word
+                    current_entity["end"] = word_end
 
-                if should_stop:
-                    entities.append(
-                        {
-                            "text": active_entity["text"],
-                            "type": active_entity["type"],
-                            "start": active_entity["start"],
-                            "end": active_entity["end"],
-                        }
-                    )
-                    active_entity = None
-                else:
-                    active_entity["text"] += " " + word
-                    active_entity["end"] = word_end
-
-            if ")" in tag and active_entity is not None:
-                entities.append(
-                    {
-                        "text": active_entity["text"],
-                        "type": active_entity["type"],
-                        "start": active_entity["start"],
-                        "end": active_entity["end"],
-                    }
-                )
-                active_entity = None
+            else:
+                if current_entity is not None:
+                    entities.append(current_entity)
+                    current_entity = None
 
             char_position = word_end + 1
 
-        if active_entity is not None:
-            entities.append(
-                {
-                    "text": active_entity["text"],
-                    "type": active_entity["type"],
-                    "start": active_entity["start"],
-                    "end": active_entity["end"],
-                }
-            )
+        if current_entity is not None:
+            entities.append(current_entity)
 
         return entities
-
-    def _should_stop_entity(self, word: str, pos_tag: str, entity_type: str) -> bool:
-        """
-        Determine if we should stop an entity based on POS tag and other heuristics.
-
-        Args:
-            word: The current word
-            pos_tag: The POS tag of the current word
-            entity_type: The type of the current entity (PERSON, LOCATION, ORGANIZATION)
-
-        Returns:
-            True if we should stop the entity, False otherwise
-        """
-        if pos_tag is None:
-            return False
-
-        if pos_tag == "POS":
-            return True
-
-        if entity_type == "PERSON":
-            if pos_tag in ["NN", "NNS"] and word.lower() not in ["jr", "sr", "jr.", "sr.", "ii", "iii", "iv"]:
-                return True
-
-        if entity_type == "ORGANIZATION":
-            if word.lower() in ["of", "the", "a", "an", "s"] and pos_tag not in ["NNP", "NNPS"]:
-                return True
-
-        return False
 
     def get_paragraphs_with_entities(self, target_entities_per_type: int = 10) -> List[Dict]:
         pattern = os.path.join(self.data_dir, "**/*.gold_conll")

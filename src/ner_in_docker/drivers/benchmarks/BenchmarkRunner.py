@@ -29,10 +29,10 @@ class BenchmarkRunner:
 
             print("\nComputing final metrics...")
             metrics = evaluator.print_results(extractor.get_name(), elapsed_time)
-            
+
             metrics["elapsed_time_seconds"] = elapsed_time
             metrics["avg_time_per_paragraph_seconds"] = elapsed_time / len(self.paragraphs) if self.paragraphs else 0
-            
+
             self.results_by_extractor[extractor.get_name()] = metrics
 
         return self.results_by_extractor
@@ -42,7 +42,7 @@ class BenchmarkRunner:
         print("-" * 80)
 
         start_time = time.time()
-        
+
         for i, paragraph in enumerate(self.paragraphs, 1):
             print(f"Paragraph {i}/{len(self.paragraphs)}...", end=" ")
 
@@ -51,7 +51,7 @@ class BenchmarkRunner:
             print(f"(GT: {len(paragraph['entities'])} entities, Pred: {len(predicted_entities)} entities)")
 
             evaluator.evaluate_paragraph(paragraph, predicted_entities)
-        
+
         elapsed_time = time.time() - start_time
         return elapsed_time
 

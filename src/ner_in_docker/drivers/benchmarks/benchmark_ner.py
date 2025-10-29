@@ -9,16 +9,18 @@ from ner_in_docker.drivers.benchmarks.Extractors.LlamaExtractor import LlamaExtr
 from ner_in_docker.drivers.benchmarks.Extractors.GPTExtractor import GPTExtractor
 from ner_in_docker.drivers.benchmarks.Extractors.DeepseekExtractor import DeepseekExtractor
 from ner_in_docker.drivers.benchmarks.Extractors.QwenExtractor import QwenExtractor
+from ner_in_docker.drivers.benchmarks.Extractors.NerServiceExtractor import NerServiceExtractor
 from ner_in_docker.drivers.benchmarks.OntoNotesParser import OntoNotesParser, TARGET_ENTITIES
 
 DATA_DIR = Path(DATA_PATH, "conll-2012", "v12", "data", "test")
 TARGET_ENTITIES_PER_TYPE = 10
 
 EXTRACTORS = [
-    # LlamaExtractor(),
+    NerServiceExtractor(),
+    LlamaExtractor(),
     GPTExtractor(),
-    # DeepseekExtractor(),
-    # QwenExtractor(),
+    DeepseekExtractor(),
+    QwenExtractor(),
 ]
 
 
