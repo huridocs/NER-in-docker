@@ -1,4 +1,5 @@
 import json
+import time
 from pathlib import Path
 from typing import List, Dict
 
@@ -19,19 +20,29 @@ class BenchmarkRunner:
             print(f"TESTING: {extractor.get_name()}")
             print(f"{'='*80}")
 
+            print("\nWarming up model (loading into memory)...")
+            extractor.warmup()
+            print("✓ Warmup complete. Starting benchmark...")
+
             evaluator = NEREvaluator()
-            self._run_extractor(extractor, evaluator)
+            elapsed_time = self._run_extractor(extractor, evaluator)
 
             print("\nComputing final metrics...")
-            metrics = evaluator.print_results()
+            metrics = evaluator.print_results(extractor.get_name(), elapsed_time)
+            
+            metrics["elapsed_time_seconds"] = elapsed_time
+            metrics["avg_time_per_paragraph_seconds"] = elapsed_time / len(self.paragraphs) if self.paragraphs else 0
+            
             self.results_by_extractor[extractor.get_name()] = metrics
 
         return self.results_by_extractor
 
-    def _run_extractor(self, extractor: EntityExtractor, evaluator: NEREvaluator):
+    def _run_extractor(self, extractor: EntityExtractor, evaluator: NEREvaluator) -> float:
         print(f"\nProcessing {len(self.paragraphs)} paragraphs...")
         print("-" * 80)
 
+        start_time = time.time()
+        
         for i, paragraph in enumerate(self.paragraphs, 1):
             print(f"Paragraph {i}/{len(self.paragraphs)}...", end=" ")
 
@@ -40,6 +51,9 @@ class BenchmarkRunner:
             print(f"(GT: {len(paragraph['entities'])} entities, Pred: {len(predicted_entities)} entities)")
 
             evaluator.evaluate_paragraph(paragraph, predicted_entities)
+        
+        elapsed_time = time.time() - start_time
+        return elapsed_time
 
     def save_results(self, config: Dict = None):
         if self.output_path is None:

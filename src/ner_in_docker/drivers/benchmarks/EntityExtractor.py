@@ -13,3 +13,9 @@ class EntityExtractor(ABC):
     @abstractmethod
     def get_name(self) -> str:
         pass
+
+    def warmup(self, sample_text: str = "John Doe works at OpenAI in San Francisco."):
+        try:
+            self.extract(sample_text)
+        except Exception as e:
+            print(f"Warning: Warmup failed for {self.get_name()}: {e}")

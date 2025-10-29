@@ -118,11 +118,11 @@ class NEREvaluator:
 
         return metrics
 
-    def print_results(self):
+    def print_results(self, extractor_name: str = "NER SERVICE", elapsed_time: float = None):
         metrics = self.calculate_metrics()
 
         print("\n" + "=" * 80)
-        print("NER SERVICE BENCHMARK RESULTS")
+        print(f"{extractor_name} BENCHMARK RESULTS")
         print("=" * 80)
         print("\nDataset: OntoNotes 5.0 (CoNLL-2012)")
         print("Target: 10 entities per type")
@@ -165,6 +165,11 @@ class NEREvaluator:
             f"{total_fp:<6} "
             f"{total_fn:<6}"
         )
+
+        if elapsed_time is not None:
+            print("-" * 80)
+            print(f"Total time: {elapsed_time:.2f} seconds")
+
         print("=" * 80)
 
         print("\nEntity counts:")
