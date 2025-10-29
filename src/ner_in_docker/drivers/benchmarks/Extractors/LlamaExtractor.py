@@ -69,7 +69,7 @@ Output (JSON array only):"""
                 entities_data = entities_data["entities"]
 
             if not isinstance(entities_data, list):
-                print(f"Warning: Expected list, got {{type(entities_data)}}")
+                print(f"Warning: Expected list, got {type(entities_data)}")
                 return []
 
             extracted_entities = []
@@ -97,11 +97,11 @@ Output (JSON array only):"""
             return extracted_entities
 
         except json.JSONDecodeError as e:
-            print(f"JSON parsing error: {{e}}")
-            print(f"Response was: {{response_text[:200]}}")
+            print(f"JSON parsing error: {e}")
+            print(f"Response was: {response_text[:200]}")
             return []
         except Exception as e:
-            print(f"Error parsing response: {{e}}")
+            print(f"Error parsing response: {e}")
             return []
 
 

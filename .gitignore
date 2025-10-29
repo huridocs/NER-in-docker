@@ -180,3 +180,4 @@ fabric.properties
 /.idea
 /models
 /data/
+.vscode/

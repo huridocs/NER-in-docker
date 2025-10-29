@@ -6,13 +6,19 @@ from pathlib import Path
 from ner_in_docker.configuration import DATA_PATH
 from ner_in_docker.drivers.benchmarks.BenchmarkRunner import BenchmarkRunner
 from ner_in_docker.drivers.benchmarks.Extractors.LlamaExtractor import LlamaExtractor
+from ner_in_docker.drivers.benchmarks.Extractors.GPTExtractor import GPTExtractor
+from ner_in_docker.drivers.benchmarks.Extractors.DeepseekExtractor import DeepseekExtractor
+from ner_in_docker.drivers.benchmarks.Extractors.QwenExtractor import QwenExtractor
 from ner_in_docker.drivers.benchmarks.OntoNotesParser import OntoNotesParser, TARGET_ENTITIES
 
 DATA_DIR = Path(DATA_PATH, "conll-2012", "v12", "data", "test")
 TARGET_ENTITIES_PER_TYPE = 10
 
 EXTRACTORS = [
-    LlamaExtractor(),
+    # LlamaExtractor(),
+    GPTExtractor(),
+    # DeepseekExtractor(),
+    # QwenExtractor(),
 ]
 
 
@@ -44,7 +50,7 @@ def main():
             entity_counts[e["type"]] += 1
         print(f"  Entity breakdown: {dict(entity_counts)}")
 
-    print(f"\n3. Initializing extractors...")
+    print("\n3. Initializing extractors...")
 
     output_file = Path(DATA_PATH, "benchmark_results.json")
     runner = BenchmarkRunner(paragraphs, output_file)
