@@ -84,14 +84,16 @@ Output (JSON array only):"""
                 end = entity.get("end", entity.get("character_end", -1))
 
                 if start == -1 or end == -1:
-                    start = original_text.find(entity_text)
-                    if start != -1:
-                        end = start + len(entity_text)
+                    position = self.find_entity_position_fuzzy(entity_text, original_text)
+                    if position:
+                        start, end = position
                     else:
                         continue
 
+                actual_text = original_text[start:end]
+
                 extracted_entities.append(
-                    ExtractedEntity(text=entity_text, type=entity_type, character_start=start, character_end=end)
+                    ExtractedEntity(text=actual_text, type=entity_type, character_start=start, character_end=end)
                 )
 
             return extracted_entities

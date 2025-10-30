@@ -16,11 +16,11 @@ DATA_DIR = Path(DATA_PATH, "conll-2012", "v12", "data", "test")
 TARGET_ENTITIES_PER_TYPE = 10
 
 EXTRACTORS = [
-    NerServiceExtractor(),
-    LlamaExtractor(),
+    # NerServiceExtractor(),
+    # LlamaExtractor(),
     GPTExtractor(),
-    DeepseekExtractor(),
-    QwenExtractor(),
+    # DeepseekExtractor(),
+    # QwenExtractor(),
 ]
 
 

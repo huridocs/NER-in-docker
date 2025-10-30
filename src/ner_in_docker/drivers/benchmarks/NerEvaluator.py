@@ -1,4 +1,5 @@
 from typing import List, Dict
+from difflib import SequenceMatcher
 
 from ner_in_docker.drivers.benchmarks.ExtractedEntity import ExtractedEntity
 
@@ -8,7 +9,9 @@ TARGET_ENTITIES = ["PERSON", "LOCATION", "ORGANIZATION"]
 
 class NEREvaluator:
 
-    def __init__(self):
+    def __init__(self, overlap_threshold: float = 0.5, text_similarity_threshold: float = 0.8):
+        self.overlap_threshold = overlap_threshold
+        self.text_similarity_threshold = text_similarity_threshold
         self.results = {
             entity_type: {
                 "true_positives": 0,
@@ -23,6 +26,25 @@ class NEREvaluator:
     def normalize_text(self, text: str) -> str:
         return text.lower().strip()
 
+    def calculate_text_similarity(self, text1: str, text2: str) -> float:
+        norm_text1 = self.normalize_text(text1)
+        norm_text2 = self.normalize_text(text2)
+        return SequenceMatcher(None, norm_text1, norm_text2).ratio()
+
+    def calculate_token_overlap(self, text1: str, text2: str) -> float:
+        tokens1 = set(self.normalize_text(text1).split())
+        tokens2 = set(self.normalize_text(text2).split())
+
+        if not tokens1 and not tokens2:
+            return 1.0
+        if not tokens1 or not tokens2:
+            return 0.0
+
+        intersection = tokens1.intersection(tokens2)
+        union = tokens1.union(tokens2)
+
+        return len(intersection) / len(union) if union else 0.0
+
     def calculate_overlap(self, gt_start: int, gt_end: int, pred_start: int, pred_end: int) -> float:
         overlap_start = max(gt_start, pred_start)
         overlap_end = min(gt_end, pred_end)
@@ -35,11 +57,45 @@ class NEREvaluator:
 
         return overlap_len / gt_len if gt_len > 0 else 0.0
 
-    def evaluate_paragraph(self, paragraph: Dict, predicted_entities: List[ExtractedEntity]):
+    def is_entity_match(self, gt_entity: Dict, pred_entity: ExtractedEntity, paragraph_text: str) -> tuple[bool, float]:
+        gt_start = gt_entity["start"]
+        gt_end = gt_entity["end"]
+        pred_start = pred_entity.character_start
+        pred_end = pred_entity.character_end
+
+        char_overlap = self.calculate_overlap(gt_start, gt_end, pred_start, pred_end)
+
+        gt_text = gt_entity.get(
+            "text", paragraph_text[gt_start:gt_end] if gt_start >= 0 and gt_end <= len(paragraph_text) else ""
+        )
+        pred_text = pred_entity.text
+
+        token_overlap = self.calculate_token_overlap(gt_text, pred_text)
+
+        text_similarity = self.calculate_text_similarity(gt_text, pred_text)
+
+        is_match = (
+            char_overlap >= self.overlap_threshold
+            or (token_overlap >= 0.5 and text_similarity >= self.text_similarity_threshold)
+            or text_similarity >= 0.9
+        )
+
+        match_score = max(char_overlap, (token_overlap + text_similarity) / 2, text_similarity)
+
+        return is_match, match_score
+
+    def evaluate_paragraph(self, paragraph: Dict, predicted_entities: List[ExtractedEntity]) -> Dict:
         ground_truth = paragraph["entities"]
+        paragraph_text = paragraph["text"]
 
         matched_gt = set()
         matched_pred = set()
+
+        match_details = {
+            "matched_predictions": [],
+            "false_positives": [],
+            "false_negatives": [],
+        }
 
         for gt_entity in ground_truth:
             entity_type = gt_entity["type"]
@@ -62,34 +118,52 @@ class NEREvaluator:
             if pred_start < 0 or pred_end < 0:
                 continue
 
-            best_match_idx = -1
-            best_overlap = 0.0
+            best_match_gt_indices = []
+            best_match_score = 0.0
 
             for j, gt_entity in enumerate(ground_truth):
-                if j in matched_gt:
-                    continue
-
                 gt_type = gt_entity["type"]
 
                 if gt_type != pred_type:
                     continue
 
-                overlap = self.calculate_overlap(gt_entity["start"], gt_entity["end"], pred_start, pred_end)
+                is_match, match_score = self.is_entity_match(gt_entity, pred_entity, paragraph_text)
 
-                if overlap > best_overlap:
-                    best_overlap = overlap
-                    best_match_idx = j
+                if is_match and match_score > best_match_score:
+                    best_match_score = match_score
+                    best_match_gt_indices = []
+                    for k, gt_e in enumerate(ground_truth):
+                        if gt_e["type"] == pred_type:
+                            text_sim = self.calculate_text_similarity(pred_entity.text, gt_e["text"])
+                            if text_sim >= 0.8:
+                                best_match_gt_indices.append(k)
 
-            if best_match_idx >= 0 and best_overlap >= 0.5:
-                matched_gt.add(best_match_idx)
+            if best_match_gt_indices:
+                matched_gt_entities = [ground_truth[idx] for idx in best_match_gt_indices]
+                match_details["matched_predictions"].append(
+                    {
+                        "prediction": pred_entity,
+                        "matched_ground_truth": matched_gt_entities,
+                        "match_score": best_match_score,
+                        "num_matches": len(best_match_gt_indices),
+                    }
+                )
+
+                for idx in best_match_gt_indices:
+                    if idx not in matched_gt:
+                        matched_gt.add(idx)
+                        self.results[pred_type]["true_positives"] += 1
                 matched_pred.add(i)
-                self.results[pred_type]["true_positives"] += 1
             else:
+                match_details["false_positives"].append(pred_entity)
                 self.results[pred_type]["false_positives"] += 1
 
         for j, gt_entity in enumerate(ground_truth):
             if j not in matched_gt:
+                match_details["false_negatives"].append(gt_entity)
                 self.results[gt_entity["type"]]["false_negatives"] += 1
+
+        return match_details
 
     def calculate_metrics(self) -> Dict:
         metrics = {}
@@ -127,6 +201,9 @@ class NEREvaluator:
         print("\nDataset: OntoNotes 5.0 (CoNLL-2012)")
         print("Target: 10 entities per type")
         print(f"Entity types: {', '.join(TARGET_ENTITIES)}")
+        print("\nEvaluation Method: Fuzzy Matching")
+        print(f"  - Character overlap threshold: {self.overlap_threshold:.0%}")
+        print(f"  - Text similarity threshold: {self.text_similarity_threshold:.0%}")
         print("\n" + "-" * 80)
         print(f"{'Entity Type':<15} {'Precision':<12} {'Recall':<12} {'F1 Score':<12} {'TP':<6} {'FP':<6} {'FN':<6}")
         print("-" * 80)
