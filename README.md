@@ -27,6 +27,40 @@ Run the service:
 
       make start_no_gpu
 
+The service includes both:
+- **REST API**: Available at `http://localhost:5070`
+- **Gradio UI**: Available at `http://localhost:7860`
+
+---
+
+## Gradio Web UI
+
+The project includes a user-friendly web interface built with Gradio, accessible at `http://localhost:7860` when the service is running.
+
+### Features
+
+#### Text Extraction Tab
+- Enter any text to extract named entities
+- Supports multiple languages (English, Spanish, German, French)
+- Visual highlighting of entities with color-coded types
+- JSON response viewer for detailed analysis
+
+#### PDF Extraction Tab
+- Upload PDF documents for entity extraction
+- Download annotated PDF with highlighted entities
+- Visual display of extracted entities grouped by type
+- Fast mode option for quicker processing
+- JSON response viewer
+
+### Entity Types and Colors
+- **Person (PER)**: Blue
+- **Organization (ORG)**: Red
+- **Location (LOC)**: Green
+- **Date (DAT)**: Orange
+- **Law (LAW)**: Purple
+- **Document Code (DOC)**: Teal
+- **Reference (REF)**: Dark Orange
+
 ---
 
 ## API Usage

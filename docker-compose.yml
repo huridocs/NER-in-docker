@@ -23,6 +23,18 @@ services:
     ports:
       - "5060:5060"
 
+  ner-ui:
+    container_name: ner-ui
+    build:
+      context: .
+      dockerfile: Dockerfile.gradio
+    init: true
+    restart: unless-stopped
+    networks:
+      - network-ner
+    ports:
+      - "7860:7860"
+
 networks:
   network-ner:
     driver: bridge

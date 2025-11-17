@@ -21,6 +21,11 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+  
+  ner-ui:
+    extends:
+      file: docker-compose.yml
+      service: ner-ui
 
 networks:
   network-ner:
