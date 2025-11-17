@@ -3,7 +3,6 @@ import requests
 import json
 from typing import Dict, Any, Tuple, Optional
 import tempfile
-from pathlib import Path
 
 # Configuration
 NER_SERVICE_URL = "http://ner:5070"
@@ -304,4 +303,14 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
 
 
 if __name__ == "__main__":
-    app.launch(server_name="0.0.0.0", server_port=7860, share=False)
+    print("=" * 80, flush=True)
+    print("✅  NER UI IS READY!".center(80), flush=True)
+    print("=" * 80, flush=True)
+    print("", flush=True)
+    print("🌐 Access the UI at:", flush=True)
+    print("   → http://localhost:7860", flush=True)
+    print("", flush=True)
+    print("=" * 80, flush=True)
+    print("=" * 80 + "\n", flush=True)
+
+    app.launch(server_name="0.0.0.0", server_port=7860, share=False, quiet=True)
