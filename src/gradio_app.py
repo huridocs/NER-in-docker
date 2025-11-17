@@ -3,11 +3,10 @@ import requests
 import json
 from typing import Dict, Any, Tuple, Optional
 import tempfile
+import time
 
-# Configuration
 NER_SERVICE_URL = "http://ner:5070"
 
-# Entity type colors matching the service
 ENTITY_COLORS = {
     "PERSON": "#4A90E2",  # Blue
     "ORGANIZATION": "#E74C3C",  # Red
@@ -84,88 +83,77 @@ def extract_entities_from_text(text: str, language: str = "en") -> Tuple[str, st
         return f"<p style='color: red;'>Error: {str(e)}</p>", ""
 
 
-def extract_entities_from_pdf(
-    pdf_file, language: str = "en", fast: bool = False, get_entities: bool = True, get_visualization: bool = False
-) -> Tuple[Optional[str], str, str, str]:
-    """Extract entities from PDF and return annotated PDF with JSON response based on user selection."""
+def extract_entities_from_pdf(pdf_file, language: str = "en", fast: bool = False) -> Tuple[str, str]:
+    """Extract entities from PDF and return JSON response."""
     if pdf_file is None:
-        return None, "<p style='color: red;'>Please upload a PDF file.</p>", "", ""
-
-    if not get_entities and not get_visualization:
-        return (
-            None,
-            "<p style='color: orange;'>Please select at least one option: 'Get entities' or 'Get visualization'.</p>",
-            "",
-            "",
-        )
+        return "<p style='color: red;'>Please upload a PDF file.</p>", ""
 
     try:
-        # Read the PDF file
         with open(pdf_file, "rb") as f:
             pdf_content = f.read()
 
-        annotated_pdf_path = None
-        entities_html = ""
-        json_response = ""
-        pdf_preview_html = ""
+        files = {"file": ("document.pdf", pdf_content, "application/pdf")}
+        data = {"language": language, "fast": fast}
 
-        # Get visualization if requested
-        if get_visualization:
-            files = {"file": ("document.pdf", pdf_content, "application/pdf")}
-            data = {"language": language, "fast": fast}
+        entities_response = requests.post(f"{NER_SERVICE_URL}/", files=files, data=data, timeout=300)
 
-            visualize_response = requests.post(f"{NER_SERVICE_URL}/visualize", files=files, data=data, timeout=300)
-
-            if visualize_response.status_code == 200:
-                # Save annotated PDF to temporary file
-                temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-                temp_pdf.write(visualize_response.content)
-                temp_pdf.close()
-                annotated_pdf_path = temp_pdf.name
-
-                # Create PDF preview HTML with embedded viewer
-                import base64
-
-                pdf_base64 = base64.b64encode(visualize_response.content).decode("utf-8")
-                pdf_preview_html = f"""
-                <div style="width: 100%; height: 800px; border: 1px solid #ddd; border-radius: 5px; overflow: hidden;">
-                    <iframe 
-                        src="data:application/pdf;base64,{pdf_base64}" 
-                        width="100%" 
-                        height="100%" 
-                        style="border: none;"
-                        type="application/pdf">
-                        <p>Your browser does not support embedded PDFs. Please download the file to view it.</p>
-                    </iframe>
-                </div>
-                """
-            else:
-                entities_html += f"<p style='color: red;'>Error getting visualization: Service returned status code {visualize_response.status_code}</p>"
-
-        # Get entities if requested
-        if get_entities:
-            files = {"file": ("document.pdf", pdf_content, "application/pdf")}
-            data = {"language": language, "fast": fast}
-
-            entities_response = requests.post(f"{NER_SERVICE_URL}/", files=files, data=data, timeout=300)
-
-            if entities_response.status_code == 200:
-                result = entities_response.json()
-                entities = result.get("entities", [])
-                entities_html = format_entities_html(entities) + entities_html
-                json_response = json.dumps(result, indent=2)
-            else:
-                entities_html += f"<p style='color: red;'>Error getting entities: Service returned status code {entities_response.status_code}</p>"
-
-        if not entities_html:
-            entities_html = "<p>Processing completed.</p>"
-
-        return annotated_pdf_path, entities_html, json_response, pdf_preview_html
+        if entities_response.status_code == 200:
+            result = entities_response.json()
+            entities = result.get("entities", [])
+            entities_html = format_entities_html(entities)
+            json_response = json.dumps(result, indent=2)
+            return entities_html, json_response
+        else:
+            return f"<p style='color: red;'>Error: Service returned status code {entities_response.status_code}</p>", ""
 
     except requests.exceptions.ConnectionError:
-        return None, "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>", "", ""
+        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>", ""
     except Exception as e:
-        return None, f"<p style='color: red;'>Error: {str(e)}</p>", "", ""
+        return f"<p style='color: red;'>Error: {str(e)}</p>", ""
+
+
+def visualize_pdf(pdf_file, language: str = "en", fast: bool = False) -> Tuple[Optional[str], str]:
+    """Generate annotated PDF with entity highlights."""
+    if pdf_file is None:
+        return None, "<p style='color: red;'>Please upload a PDF file.</p>"
+
+    try:
+        with open(pdf_file, "rb") as f:
+            pdf_content = f.read()
+
+        files = {"file": ("document.pdf", pdf_content, "application/pdf")}
+        data = {"language": language, "fast": fast}
+
+        visualize_response = requests.post(f"{NER_SERVICE_URL}/visualize", files=files, data=data, timeout=300)
+
+        if visualize_response.status_code == 200:
+            temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+            temp_pdf.write(visualize_response.content)
+            temp_pdf.close()
+
+            import base64
+
+            pdf_base64 = base64.b64encode(visualize_response.content).decode("utf-8")
+            pdf_preview_html = f"""
+            <div style="width: 100%; height: 800px; border: 1px solid #ddd; border-radius: 5px; overflow: hidden;">
+                <iframe 
+                    src="data:application/pdf;base64,{pdf_base64}" 
+                    width="100%" 
+                    height="100%" 
+                    style="border: none;"
+                    type="application/pdf">
+                    <p>Your browser does not support embedded PDFs. Please download the file to view it.</p>
+                </iframe>
+            </div>
+            """
+            return temp_pdf.name, pdf_preview_html
+        else:
+            return None, f"<p style='color: red;'>Error: Service returned status code {visualize_response.status_code}</p>"
+
+    except requests.exceptions.ConnectionError:
+        return None, "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>"
+    except Exception as e:
+        return None, f"<p style='color: red;'>Error: {str(e)}</p>"
 
 
 def create_legend() -> str:
@@ -190,6 +178,38 @@ def create_legend() -> str:
 
     legend_html += "</div></div>"
     return legend_html
+
+
+def wait_for_backend(max_retries: int = 60, retry_interval: int = 2) -> bool:
+    """Wait for the backend service to be ready by polling the info endpoint."""
+    print("\n" + "=" * 80, flush=True)
+    print("⏳ Waiting for NER backend service to be ready...".center(80), flush=True)
+    print("=" * 80 + "\n", flush=True)
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = requests.get(f"{NER_SERVICE_URL}/", timeout=5)
+            if response.status_code == 200:
+                print("=" * 80, flush=True)
+                print("✅  NER UI IS READY!".center(80), flush=True)
+                print("=" * 80, flush=True)
+                print("", flush=True)
+                print("🌐 Access the UI at:", flush=True)
+                print("   → http://localhost:7860", flush=True)
+                print("", flush=True)
+                print("=" * 80, flush=True)
+                print("=" * 80 + "\n", flush=True)
+                return True
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            time.sleep(retry_interval)
+        except Exception as e:
+            print(f"   Unexpected error while checking backend: {str(e)}", flush=True)
+            time.sleep(retry_interval)
+
+    print("\n" + "=" * 80, flush=True)
+    print("❌ Backend service did not become ready in time!".center(80), flush=True)
+    print("=" * 80 + "\n", flush=True)
+    return False
 
 
 # Create Gradio interface
@@ -247,52 +267,70 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                 outputs=[entities_output, json_output_text],
             )
 
-        # Tab 2: PDF Upload
-        with gr.Tab("📄 PDF Extraction"):
+        # Tab 2: PDF Entity Extraction
+        with gr.Tab("📄 PDF Entity Extraction"):
             gr.Markdown("### Extract entities from PDF")
-            gr.Markdown("Upload a PDF document to extract and visualize named entities.")
+            gr.Markdown("Upload a PDF document to extract named entities and get the JSON response.")
 
             with gr.Row():
                 with gr.Column(scale=1):
-                    pdf_input = gr.File(label="Upload PDF", file_types=[".pdf"], type="filepath")
+                    pdf_input_entities = gr.File(label="Upload PDF", file_types=[".pdf"], type="filepath")
                     with gr.Row():
-                        language_pdf = gr.Dropdown(
+                        language_pdf_entities = gr.Dropdown(
                             choices=["en", "es", "de", "fr"],
                             value="en",
                             label="Language",
                             info="Select the language of your PDF",
                         )
-                        fast_mode = gr.Checkbox(
+                        fast_mode_entities = gr.Checkbox(
                             label="Fast Mode", value=False, info="Enable for faster processing (less accurate segmentation)"
                         )
 
-                    gr.Markdown("#### Options:")
-                    with gr.Row():
-                        get_entities_checkbox = gr.Checkbox(
-                            label="Get entities", value=True, info="Extract entities and JSON response"
-                        )
-                        get_visualization_checkbox = gr.Checkbox(
-                            label="Get visualization", value=False, info="Generate annotated PDF with highlights"
-                        )
-
-                    extract_pdf_btn = gr.Button("Extract", variant="primary")
-
-                    # Entities display below the upload section
-                    with gr.Accordion("📋 Extracted Entities", open=True):
-                        entities_output_pdf = gr.HTML(label="Entities")
+                    extract_entities_btn = gr.Button("Extract Entities", variant="primary")
 
                 with gr.Column(scale=2):
-                    annotated_pdf_output = gr.File(label="Annotated PDF", interactive=False)
-                    gr.Markdown("#### PDF Preview:")
-                    pdf_preview = gr.HTML(label="PDF Viewer")
+                    with gr.Accordion("📋 Extracted Entities", open=True):
+                        entities_output_pdf = gr.HTML(label="Entities")
 
             with gr.Accordion("📋 View JSON Response", open=False):
                 json_output_pdf = gr.Code(label="JSON Response", language="json", lines=15)
 
-            extract_pdf_btn.click(
+            extract_entities_btn.click(
                 fn=extract_entities_from_pdf,
-                inputs=[pdf_input, language_pdf, fast_mode, get_entities_checkbox, get_visualization_checkbox],
-                outputs=[annotated_pdf_output, entities_output_pdf, json_output_pdf, pdf_preview],
+                inputs=[pdf_input_entities, language_pdf_entities, fast_mode_entities],
+                outputs=[entities_output_pdf, json_output_pdf],
+            )
+
+        # Tab 3: PDF Visualization
+        with gr.Tab("🎨 PDF Visualization"):
+            gr.Markdown("### Visualize entities in PDF")
+            gr.Markdown("Upload a PDF document to generate an annotated version with highlighted entities.")
+
+            with gr.Row():
+                with gr.Column(scale=1):
+                    pdf_input_viz = gr.File(label="Upload PDF", file_types=[".pdf"], type="filepath")
+                    with gr.Row():
+                        language_pdf_viz = gr.Dropdown(
+                            choices=["en", "es", "de", "fr"],
+                            value="en",
+                            label="Language",
+                            info="Select the language of your PDF",
+                        )
+                        fast_mode_viz = gr.Checkbox(
+                            label="Fast Mode", value=False, info="Enable for faster processing (less accurate segmentation)"
+                        )
+
+                    visualize_btn = gr.Button("Generate Visualization", variant="primary")
+
+                with gr.Column(scale=2):
+                    gr.Markdown("#### PDF Preview:")
+                    pdf_preview = gr.HTML(label="PDF Viewer")
+                    annotated_pdf_output = gr.File(label="Download Annotated PDF", interactive=False)
+
+            visualize_btn.click(
+                fn=visualize_pdf,
+                inputs=[pdf_input_viz, language_pdf_viz, fast_mode_viz],
+                outputs=[annotated_pdf_output, pdf_preview],
             )
 
     # Footer
@@ -303,14 +341,8 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
 
 
 if __name__ == "__main__":
-    print("=" * 80, flush=True)
-    print("✅  NER UI IS READY!".center(80), flush=True)
-    print("=" * 80, flush=True)
-    print("", flush=True)
-    print("🌐 Access the UI at:", flush=True)
-    print("   → http://localhost:7860", flush=True)
-    print("", flush=True)
-    print("=" * 80, flush=True)
-    print("=" * 80 + "\n", flush=True)
+    if not wait_for_backend():
+        print("❌ Failed to connect to backend service. Exiting...", flush=True)
+        exit(1)
 
     app.launch(server_name="0.0.0.0", server_port=7860, share=False, quiet=True)
