@@ -15,6 +15,7 @@ from ner_in_docker.use_cases.GetGeolocationUseCase import GetGeolocationUseCase
 from ner_in_docker.use_cases.GetPositionsUseCase import GetPositionsUseCase
 from ner_in_docker.use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
 from ner_in_docker.use_cases.NamedEntitiesUseCase import NamedEntitiesUseCase
+from ner_in_docker.use_cases.NamedEntitiesLLMUseCase import NamedEntitiesLLMUseCase
 from ner_in_docker.use_cases.ReferencesUseCase import ReferencesUseCase
 from ner_in_docker.use_cases.VisualizeEntitiesUseCase import VisualizeEntitiesUseCase
 import logging
@@ -45,6 +46,7 @@ async def get_named_entities(
     file: UploadFile = File(None),
     fast: bool = Form(False),
     language: str = Form("en"),
+    use_llm: bool = Form(False),
 ):
     pdf_path = None
     if file:
@@ -55,7 +57,8 @@ async def get_named_entities(
 
     entities_from_db = SQLiteEntitiesStoreRepository(namespace).get_entities() if namespace else list()
 
-    named_entities = NamedEntitiesUseCase(language).get_entities_from_segments(segments)
+    extractor_use_case = NamedEntitiesLLMUseCase(language) if use_llm else NamedEntitiesUseCase(language)
+    named_entities = extractor_use_case.get_entities_from_segments(segments)
     named_entities += ReferencesUseCase(entities_from_db).get_entities_from_segments(segments)
     if file and pdf_path:
         named_entities = GetPositionsUseCase(PDFLayoutAnalysisRepository(), pdf_path).add_positions(named_entities)
@@ -107,3 +110,37 @@ async def visualize(file: UploadFile = File(...), fast: bool = Form(False), lang
 @catch_exceptions
 async def geolocation(location: str = Form(...)):
     return GetGeolocationUseCase().get_coordinates(location)
+
+
+@app.post("/llm")
+@catch_exceptions
+async def get_named_entities_llm(
+    namespace: str = Form(None),
+    identifier: str = Form(None),
+    text: str = Form(None),
+    file: UploadFile = File(None),
+    fast: bool = Form(False),
+    language: str = Form("en"),
+):
+    pdf_path = None
+    if file:
+        pdf_path = pdf_content_to_pdf_path(await file.read(), file.filename)
+        segments = PDFLayoutAnalysisRepository().get_segments(pdf_path, fast)
+    else:
+        segments = [Segment.from_text(text=text if text else "", source_id=identifier)]
+
+    entities_from_db = SQLiteEntitiesStoreRepository(namespace).get_entities() if namespace else list()
+
+    named_entities = NamedEntitiesLLMUseCase(language).get_entities_from_segments(segments)
+    named_entities += ReferencesUseCase(entities_from_db).get_entities_from_segments(segments)
+    if file and pdf_path:
+        named_entities = GetPositionsUseCase(PDFLayoutAnalysisRepository(), pdf_path).add_positions(named_entities)
+    named_entities_groups = GroupNamedEntitiesUseCase(entities_from_db, language).group(named_entities)
+
+    if namespace:
+        repository = SQLiteEntitiesStoreRepository(namespace)
+        repository.save_entities(named_entities)
+        if identifier:
+            repository.save_identifier(identifier)
+
+    return NamedEntitiesResponse.from_groups(named_entities_groups)

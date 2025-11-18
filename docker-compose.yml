@@ -11,6 +11,11 @@ services:
       - network-ner
     ports:
       - "5070:5070"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=gemma2:12b
+    depends_on:
+      - ollama
 
   pdf-layout-analysis:
     container_name: "pdf-layout-analysis"
@@ -35,6 +40,21 @@ services:
     ports:
       - "7860:7860"
 
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    init: true
+    restart: unless-stopped
+    networks:
+      - network-ner
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
 networks:
   network-ner:
     driver: bridge
+
+volumes:
+  ollama-data:
