@@ -112,6 +112,63 @@ def extract_entities_from_pdf(pdf_file, language: str = "en", fast: bool = False
         return f"<p style='color: red;'>Error: {str(e)}</p>", ""
 
 
+def extract_entities_from_text_llm(text: str, language: str = "en") -> Tuple[str, str]:
+    """Extract entities from text using LLM-based NER service."""
+    if not text.strip():
+        return "<p style='color: red;'>Please enter some text.</p>", ""
+
+    try:
+        response = requests.post(f"{NER_SERVICE_URL}/llm", data={"text": text, "language": language}, timeout=300)
+
+        if response.status_code != 200:
+            return f"<p style='color: red;'>Error: Service returned status code {response.status_code}</p>", ""
+
+        result = response.json()
+        entities = result.get("entities", [])
+
+        # Format entities for display
+        entities_html = format_entities_html(entities)
+
+        # Format JSON response
+        json_response = json.dumps(result, indent=2)
+
+        return entities_html, json_response
+
+    except requests.exceptions.ConnectionError:
+        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>", ""
+    except Exception as e:
+        return f"<p style='color: red;'>Error: {str(e)}</p>", ""
+
+
+def extract_entities_from_pdf_llm(pdf_file, language: str = "en", fast: bool = False) -> Tuple[str, str]:
+    """Extract entities from PDF using LLM-based NER service."""
+    if pdf_file is None:
+        return "<p style='color: red;'>Please upload a PDF file.</p>", ""
+
+    try:
+        with open(pdf_file, "rb") as f:
+            pdf_content = f.read()
+
+        files = {"file": ("document.pdf", pdf_content, "application/pdf")}
+        data = {"language": language, "fast": fast}
+
+        entities_response = requests.post(f"{NER_SERVICE_URL}/llm", files=files, data=data, timeout=300)
+
+        if entities_response.status_code == 200:
+            result = entities_response.json()
+            entities = result.get("entities", [])
+            entities_html = format_entities_html(entities)
+            json_response = json.dumps(result, indent=2)
+            return entities_html, json_response
+        else:
+            return f"<p style='color: red;'>Error: Service returned status code {entities_response.status_code}</p>", ""
+
+    except requests.exceptions.ConnectionError:
+        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>", ""
+    except Exception as e:
+        return f"<p style='color: red;'>Error: {str(e)}</p>", ""
+
+
 def visualize_pdf(pdf_file, language: str = "en", fast: bool = False) -> Tuple[Optional[str], str]:
     """Generate annotated PDF with entity highlights."""
     if pdf_file is None:
@@ -331,6 +388,92 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                 fn=visualize_pdf,
                 inputs=[pdf_input_viz, language_pdf_viz, fast_mode_viz],
                 outputs=[annotated_pdf_output, pdf_preview],
+            )
+
+        # Tab 4: LLM Text Extraction
+        with gr.Tab("🤖 LLM Text Extraction"):
+            gr.Markdown("### Extract entities from text using LLM")
+            gr.Markdown(
+                "Use Large Language Models (Ollama) for entity extraction. "
+                "This method can provide different results compared to traditional NER models."
+            )
+
+            with gr.Row():
+                with gr.Column(scale=2):
+                    text_input_llm = gr.Textbox(
+                        label="Input Text",
+                        placeholder="Enter text here... (e.g., 'John Smith works at Microsoft in Seattle since January 2020.')",
+                        lines=10,
+                    )
+                    with gr.Row():
+                        language_text_llm = gr.Dropdown(
+                            choices=["en", "es", "de", "fr"],
+                            value="en",
+                            label="Language",
+                            info="Select the language of your text",
+                        )
+                        extract_text_llm_btn = gr.Button("Extract Entities (LLM)", variant="primary")
+
+                with gr.Column(scale=2):
+                    entities_output_llm = gr.HTML(label="Extracted Entities")
+
+            with gr.Accordion("📋 View JSON Response", open=False):
+                json_output_text_llm = gr.Code(label="JSON Response", language="json", lines=15)
+
+            # Example texts
+            gr.Examples(
+                examples=[
+                    [
+                        "John Smith works at Microsoft in Seattle since January 2020. He reports to the CEO under Article 15 of the company bylaws."
+                    ],
+                    ["The United Nations held a meeting in Geneva on March 15, 2024, discussing international law reforms."],
+                    ["Dr. Sarah Johnson from Harvard University published research in Nature magazine last week."],
+                ],
+                inputs=text_input_llm,
+                label="Example Texts",
+            )
+
+            extract_text_llm_btn.click(
+                fn=extract_entities_from_text_llm,
+                inputs=[text_input_llm, language_text_llm],
+                outputs=[entities_output_llm, json_output_text_llm],
+            )
+
+        # Tab 5: LLM PDF Extraction
+        with gr.Tab("🤖 LLM PDF Entity Extraction"):
+            gr.Markdown("### Extract entities from PDF using LLM")
+            gr.Markdown(
+                "Upload a PDF document and use Large Language Models (Ollama) for entity extraction. "
+                "This method can provide different results compared to traditional NER models."
+            )
+
+            with gr.Row():
+                with gr.Column(scale=1):
+                    pdf_input_entities_llm = gr.File(label="Upload PDF", file_types=[".pdf"], type="filepath")
+                    with gr.Row():
+                        language_pdf_entities_llm = gr.Dropdown(
+                            choices=["en", "es", "de", "fr"],
+                            value="en",
+                            label="Language",
+                            info="Select the language of your PDF",
+                        )
+                        fast_mode_entities_llm = gr.Checkbox(
+                            label="Fast Mode", value=False, info="Enable for faster processing (less accurate segmentation)"
+                        )
+
+                    extract_entities_llm_btn = gr.Button("Extract Entities (LLM)", variant="primary")
+
+                with gr.Column(scale=2):
+                    with gr.Accordion("📋 Extracted Entities", open=True):
+                        entities_output_pdf_llm = gr.HTML(label="Entities")
+
+            with gr.Accordion("📋 View JSON Response", open=False):
+                json_output_pdf_llm = gr.Code(label="JSON Response", language="json", lines=15)
+
+            extract_entities_llm_btn.click(
+                fn=extract_entities_from_pdf_llm,
+                inputs=[pdf_input_entities_llm, language_pdf_entities_llm, fast_mode_entities_llm],
+                outputs=[entities_output_pdf_llm, json_output_pdf_llm],
             )
 
     # Footer
