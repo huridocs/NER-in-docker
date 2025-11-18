@@ -49,12 +49,7 @@ services:
       - network-ner
     ports:
       - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
 
 networks:
   network-ner:
     driver: bridge
-
-volumes:
-  ollama-data:
