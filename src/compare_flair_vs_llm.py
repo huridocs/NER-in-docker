@@ -1,7 +1,6 @@
 # from ner_in_docker.use_cases.GetFlairEntitiesUseCase import GetFlairEntitiesUseCase
 from ner_in_docker.use_cases.GetLLMEntitiesUseCase import GetLLMEntitiesUseCase
 
-
 if __name__ == "__main__":
     sample_texts = [
         "Barack Obama was born in Hawaii and served as the 44th President of the United States.",
