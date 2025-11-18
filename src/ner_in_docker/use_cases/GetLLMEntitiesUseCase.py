@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import List
 from ollama import Client
 from rapidfuzz import fuzz
@@ -7,6 +8,8 @@ from ner_in_docker.configuration import OLLAMA_HOST, OLLAMA_MODEL
 from ner_in_docker.domain.NamedEntity import NamedEntity
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 
+logger = logging.getLogger(__name__)
+
 
 class GetLLMEntitiesUseCase:
 
@@ -14,6 +17,27 @@ class GetLLMEntitiesUseCase:
         self.model_name = model_name or OLLAMA_MODEL
         self.host = host or OLLAMA_HOST
         self.client = Client(host=self.host)
+        self._ensure_model_available()
+
+    def _ensure_model_available(self):
+        try:
+            models_response = self.client.list()
+            available_models = [model["name"] for model in models_response.get("models", [])]
+
+            model_available = any(
+                self.model_name == model or self.model_name.split(":")[0] == model.split(":")[0]
+                for model in available_models
+            )
+
+            if not model_available:
+                logger.info(f"Model {self.model_name} not found. Pulling from Ollama...")
+                self.client.pull(self.model_name)
+                logger.info(f"Successfully pulled model {self.model_name}")
+            else:
+                logger.info(f"Model {self.model_name} is already available")
+
+        except Exception as e:
+            logger.warning(f"Could not verify/pull model {self.model_name}: {e}")
 
     @staticmethod
     def remove_overlapping_entities(entities: list[NamedEntity]) -> list[NamedEntity]:
@@ -65,7 +89,6 @@ JSON array:"""
         if pos != -1:
             return (pos, pos + len(entity_text))
 
-        words = entity_text.split()
         for i in range(len(original_text) - len(entity_text) + 1):
             substring = original_text[i : i + len(entity_text)]
             if fuzz.ratio(entity_text, substring) > 90:
