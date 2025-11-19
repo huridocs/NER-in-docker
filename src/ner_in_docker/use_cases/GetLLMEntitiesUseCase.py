@@ -89,7 +89,7 @@ JSON array:"""
         if pos != -1:
             return (pos, pos + len(entity_text))
 
-        for i in range(len(original_text) - len(entity_text) + 1):
+        for i in range(start_search, len(original_text) - len(entity_text) + 1):
             substring = original_text[i : i + len(entity_text)]
             if fuzz.ratio(entity_text, substring) > 90:
                 return (i, i + len(entity_text))
@@ -137,8 +137,11 @@ JSON array:"""
 
                 start_search = 0
                 position = None
+                max_iterations = 100
+                iterations = 0
 
-                while True:
+                while iterations < max_iterations:
+                    iterations += 1
                     temp_position = self._find_entity_position(entity_text, original_text, start_search)
                     if temp_position is None:
                         break
@@ -151,6 +154,9 @@ JSON array:"""
 
                     if not is_overlapping:
                         position = temp_position
+                        break
+
+                    if temp_position[0] <= start_search:
                         break
 
                     start_search = temp_position[1]
