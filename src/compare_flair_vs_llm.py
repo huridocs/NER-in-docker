@@ -2,6 +2,7 @@
 from ner_in_docker.use_cases.GetLLMEntitiesUseCase import GetLLMEntitiesUseCase
 
 if __name__ == "__main__":
+
     sample_texts = [
         "Barack Obama was born in Hawaii and served as the 44th President of the United States.",
         "The United Nations headquarters is located in New York City and was established in 1945.",
@@ -40,13 +41,17 @@ if __name__ == "__main__":
         "NATO Secretary General Jens Stoltenberg met with Ukrainian President Volodymyr Zelenskyy and Polish President Andrzej Duda at the Ramstein Air Base summit in Germany.",
     ]
 
+    sample_texts = [
+        "The FDA approved Pfizer-BioNTech's Comirnaty and Moderna's Spikevax vaccines after Phase III clinical trials conducted at Johns Hopkins University and Massachusetts General Hospital.",
+        "The Treaty of Versailles, signed on June 28, 1919, at the Palace of Versailles near Paris, officially ended World War I between Germany and the Allied Powers.",
+    ]
     # print("=" * 80)
     # print("COMPARING FLAIR vs LLM ENTITY EXTRACTION")
     # print("=" * 80)
     #
     flair_results = {}
     llm_results = {}
-    #
+
     # print("\n" + "=" * 80)
     # print("PHASE 1: Running FLAIR Extraction")
     # print("=" * 80)
@@ -89,18 +94,18 @@ if __name__ == "__main__":
             print(f"  Error: {e}")
             llm_results[i] = (text, [])
 
-    del llm_extractor
-
-    print("\n" + "=" * 80)
-    print("COMPARISON SUMMARY")
-    print("=" * 80)
-
-    for i in range(1, len(sample_texts) + 1):
-        text, flair_entities = flair_results[i]
-        _, llm_entities = llm_results[i]
-        print(f"\nTEST {i}: {text}")
-        print(f"  Flair: {len(flair_entities)} entities | LLM: {len(llm_entities)} entities")
-
-    print("\n" + "=" * 80)
-    print("COMPARISON COMPLETE")
-    print("=" * 80)
+    # del llm_extractor
+    #
+    # print("\n" + "=" * 80)
+    # print("COMPARISON SUMMARY")
+    # print("=" * 80)
+    #
+    # for i in range(1, len(sample_texts) + 1):
+    #     text, flair_entities = flair_results[i]
+    #     _, llm_entities = llm_results[i]
+    #     print(f"\nTEST {i}: {text}")
+    #     print(f"  Flair: {len(flair_entities)} entities | LLM: {len(llm_entities)} entities")
+    #
+    # print("\n" + "=" * 80)
+    # print("COMPARISON COMPLETE")
+    # print("=" * 80)

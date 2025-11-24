@@ -9,4 +9,5 @@ TITLES_TYPES = ["title", "section header"]
 SEPARATOR = " ||| "
 PDF_ANALYSIS_SERVICE_URL = "http://pdf-layout-analysis:5060"
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma3:12b")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gpt-oss:120-cloud")
+# OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma3:12b")
