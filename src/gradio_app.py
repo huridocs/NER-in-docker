@@ -64,6 +64,17 @@ with gr.Blocks(
                     gr.Markdown("#### Segment Details")
                     selected_segment = gr.HTML(elem_id="segment-details")
 
+                    gr.Markdown("#### Create Reference")
+                    reference_text_input = gr.Textbox(
+                        label="Reference Text",
+                        placeholder="Enter reference text...",
+                    )
+                    to_input = gr.Textbox(
+                        label="To",
+                        placeholder="Enter target...",
+                    )
+                    create_reference_btn = gr.Button("Create Reference", variant="primary")
+
             def update_dropdown(ns):
                 choices = get_identifiers(ns)
                 return gr.Dropdown(choices=choices, value=choices[0] if choices else None)
@@ -98,7 +109,7 @@ with gr.Blocks(
                             )
                             page_dims = f"{segment.get('page_width', 'N/A')}x{segment.get('page_height', 'N/A')}"
 
-                            details = f"## Segment {seg_num}\n\n**Text:** {full_text}\n\n**Page:** {page}\n\n**Type:** {seg_type}\n\n**Source ID:** {source_id}\n\n**Bounding Box:** {bbox_str}\n\n**Page Dimensions:** {page_dims}"
+                            details = f"## Segment {seg_num}\n\n**Text:** {full_text}"
 
                             cards_html += f"""<div style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
                                 <div style="font-weight: bold; margin-bottom: 5px;">Segment {seg_num} (Page {page}, Type: {seg_type})</div>
@@ -311,5 +322,15 @@ if __name__ == "__main__":
     # if not wait_for_backend():
     #     print("❌ Failed to connect to backend service. Exiting...", flush=True)
     #     exit(1)
+
+    print("=" * 80, flush=True)
+    print("✅  NER UI IS READY!".center(80), flush=True)
+    print("=" * 80, flush=True)
+    print("", flush=True)
+    print("🌐 Access the UI at:", flush=True)
+    print("   → http://localhost:7860", flush=True)
+    print("", flush=True)
+    print("=" * 80, flush=True)
+    print("=" * 80 + "\n", flush=True)
 
     app.launch(server_name="0.0.0.0", server_port=7860, share=False, quiet=True)
