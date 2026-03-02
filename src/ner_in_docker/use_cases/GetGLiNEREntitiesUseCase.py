@@ -6,8 +6,8 @@ from ner_in_docker.configuration import MODELS_PATH
 from ner_in_docker.domain.NamedEntity import NamedEntity
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 
-gliner_path = Path(MODELS_PATH, "gliner")
-classifier = GLiNER.from_pretrained(gliner_path) if gliner_path.exists() else None
+# gliner_path = Path(MODELS_PATH, "gliner")
+# classifier = GLiNER.from_pretrained(gliner_path) if gliner_path.exists() else None
 
 
 class GetGLiNEREntitiesUseCase:

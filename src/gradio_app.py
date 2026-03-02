@@ -58,9 +58,7 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
 
             def display_segments(identifier, namespace):
                 if not identifier:
-                    segments_container.value = ""
-                    selected_segment.value = ""
-                    return
+                    return "", ""
 
                 try:
                     response = requests.get(
@@ -94,15 +92,12 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                             </div>"""
                         cards_html += "</div>"
 
-                        segments_container.value = cards_html
-                        selected_segment.value = "<p>Click a segment to view details</p>"
+                        return cards_html, "<p>Click a segment to view details</p>"
                     else:
-                        segments_container.value = f"<p>Error: {response.status_code}</p>"
-                        selected_segment.value = ""
+                        return f"<p>Error: {response.status_code}</p>", ""
 
                 except Exception as e:
-                    segments_container.value = f"<p>Error: {str(e)}</p>"
-                    selected_segment.value = ""
+                    return f"<p>Error: {str(e)}</p>", ""
 
             identifier_dropdown.change(
                 fn=display_segments,
