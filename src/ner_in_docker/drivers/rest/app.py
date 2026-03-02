@@ -6,6 +6,7 @@ from fastapi import FastAPI, Form, UploadFile, File
 from starlette.responses import FileResponse
 from ner_in_docker.adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
 from ner_in_docker.adapters.PDFVisualizationRepository import PDFVisualizationRepository
+from ner_in_docker.adapters.PostgresEntitiesStoreRepository import PostgresEntitiesStoreRepository
 from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
 
 from ner_in_docker.domain.Segment import Segment
@@ -71,6 +72,30 @@ async def get_named_entities(
             repository.save_identifier(identifier)
 
     return NamedEntitiesResponse.from_groups(named_entities_groups)
+
+
+@app.post("/save_text")
+@catch_exceptions
+async def save_text(
+    namespace: str = Form(None),
+    identifier: str = Form(None),
+    text: str = Form(None),
+    file: UploadFile = File(None),
+    fast: bool = Form(False),
+    language: str = Form("en"),
+):
+    store_repository = PostgresEntitiesStoreRepository(language, namespace)
+    if store_repository.is_processed(identifier):
+        return "Already processed"
+
+    if file:
+        pdf_path = pdf_content_to_pdf_path(await file.read(), file.filename)
+        segments = PDFLayoutAnalysisRepository().get_segments(pdf_path, fast)
+    else:
+        segments = [Segment.from_text(text=text if text else "", source_id=identifier)]
+
+    store_repository.save_segments(segments)
+    return "Texts saved"
 
 
 @app.post("/delete_namespace")

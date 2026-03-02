@@ -26,7 +26,8 @@ dependencies = [
     "huggingface-hub==0.27.1",
     "requests==2.32.5",
     "torch==2.7.1",
-    "pdf-annotate==0.12.0"
+    "pdf-annotate==0.12.0",
+    "psycopg2-binary==2.9.10"
 ]
 
 [project.urls]
