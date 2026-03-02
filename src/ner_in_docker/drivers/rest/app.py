@@ -74,6 +74,23 @@ async def get_named_entities(
     return NamedEntitiesResponse.from_groups(named_entities_groups)
 
 
+@app.get("/identifiers")
+@catch_exceptions
+async def get_identifiers(namespace: str = "default_namespace", language: str = "en"):
+    store_repository = PostgresEntitiesStoreRepository(namespace, language)
+    return store_repository.get_identifiers()
+
+
+@app.get("/segments")
+@catch_exceptions
+async def get_segments(identifier: str, namespace: str = "default_namespace", language: str = "en"):
+    store_repository = PostgresEntitiesStoreRepository(namespace, language)
+    return [
+        segment.to_dict() if hasattr(segment, "to_dict") else segment.__dict__
+        for segment in store_repository.get_segments(identifier)
+    ]
+
+
 @app.post("/save_text")
 @catch_exceptions
 async def save_text(

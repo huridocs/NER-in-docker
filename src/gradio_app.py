@@ -1,307 +1,17 @@
 import gradio as gr
-import requests
-import json
-from typing import Dict, Any, Tuple, Optional
-import tempfile
-import time
 
-NER_SERVICE_URL = "http://ner:5070"
-
-ENTITY_COLORS = {
-    "PERSON": "#4A90E2",  # Blue
-    "ORGANIZATION": "#E74C3C",  # Red
-    "LOCATION": "#2ECC71",  # Green
-    "DATE": "#F39C12",  # Orange
-    "LAW": "#9B59B6",  # Purple
-    "DOCUMENT_CODE": "#1ABC9C",  # Teal
-    "REFERENCE": "#D35400",  # Dark Orange
-}
-
-
-def format_entity_display(entity: Dict[str, Any]) -> str:
-    """Format a single entity for display."""
-    entity_type = entity.get("type", "UNKNOWN")
-    text = entity.get("text", "")
-    color = ENTITY_COLORS.get(entity_type, "#95A5A6")
-
-    return f'<span style="background-color: {color}; padding: 2px 6px; border-radius: 3px; color: white; margin: 2px; display: inline-block;">{text} ({entity_type})</span>'
-
-
-def format_entities_html(entities: list) -> str:
-    """Format entities list as HTML."""
-    if not entities:
-        return "<p>No entities found.</p>"
-
-    html = "<div style='line-height: 2.5;'>"
-
-    # Group by entity type
-    entities_by_type = {}
-    for entity in entities:
-        entity_type = entity.get("type", "UNKNOWN")
-        if entity_type not in entities_by_type:
-            entities_by_type[entity_type] = []
-        entities_by_type[entity_type].append(entity)
-
-    # Display grouped entities
-    for entity_type, type_entities in entities_by_type.items():
-        color = ENTITY_COLORS.get(entity_type, "#95A5A6")
-        html += f'<h4 style="color: {color}; margin-top: 15px;">{entity_type} ({len(type_entities)})</h4>'
-        html += '<div style="margin-bottom: 10px;">'
-        for entity in type_entities:
-            html += format_entity_display(entity)
-        html += "</div>"
-
-    html += "</div>"
-    return html
-
-
-def extract_entities_from_text(text: str, language: str = "en") -> Tuple[str, str]:
-    """Extract entities from text using the NER service."""
-    if not text.strip():
-        return "<p style='color: red;'>Please enter some text.</p>", ""
-
-    try:
-        response = requests.post(f"{NER_SERVICE_URL}/", data={"text": text, "language": language}, timeout=300)
-
-        if response.status_code != 200:
-            return f"<p style='color: red;'>Error: Service returned status code {response.status_code}</p>", ""
-
-        result = response.json()
-        entities = result.get("entities", [])
-
-        # Format entities for display
-        entities_html = format_entities_html(entities)
-
-        # Format JSON response
-        json_response = json.dumps(result, indent=2)
-
-        return entities_html, json_response
-
-    except requests.exceptions.ConnectionError:
-        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>", ""
-    except Exception as e:
-        return f"<p style='color: red;'>Error: {str(e)}</p>", ""
-
-
-def extract_entities_from_pdf(pdf_file, language: str = "en", fast: bool = False) -> Tuple[str, str]:
-    """Extract entities from PDF and return JSON response."""
-    if pdf_file is None:
-        return "<p style='color: red;'>Please upload a PDF file.</p>", ""
-
-    try:
-        with open(pdf_file, "rb") as f:
-            pdf_content = f.read()
-
-        files = {"file": ("document.pdf", pdf_content, "application/pdf")}
-        data = {"language": language, "fast": fast}
-
-        entities_response = requests.post(f"{NER_SERVICE_URL}/", files=files, data=data, timeout=300)
-
-        if entities_response.status_code == 200:
-            result = entities_response.json()
-            entities = result.get("entities", [])
-            entities_html = format_entities_html(entities)
-            json_response = json.dumps(result, indent=2)
-            return entities_html, json_response
-        else:
-            return f"<p style='color: red;'>Error: Service returned status code {entities_response.status_code}</p>", ""
-
-    except requests.exceptions.ConnectionError:
-        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>", ""
-    except Exception as e:
-        return f"<p style='color: red;'>Error: {str(e)}</p>", ""
-
-
-def extract_entities_from_text_llm(text: str, language: str = "en") -> Tuple[str, str]:
-    """Extract entities from text using LLM-based NER service."""
-    if not text.strip():
-        return "<p style='color: red;'>Please enter some text.</p>", ""
-
-    try:
-        response = requests.post(f"{NER_SERVICE_URL}/llm", data={"text": text, "language": language}, timeout=300)
-
-        if response.status_code != 200:
-            return f"<p style='color: red;'>Error: Service returned status code {response.status_code}</p>", ""
-
-        result = response.json()
-        entities = result.get("entities", [])
-
-        # Format entities for display
-        entities_html = format_entities_html(entities)
-
-        # Format JSON response
-        json_response = json.dumps(result, indent=2)
-
-        return entities_html, json_response
-
-    except requests.exceptions.ConnectionError:
-        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>", ""
-    except Exception as e:
-        return f"<p style='color: red;'>Error: {str(e)}</p>", ""
-
-
-def extract_entities_from_pdf_llm(pdf_file, language: str = "en", fast: bool = False) -> Tuple[str, str]:
-    """Extract entities from PDF using LLM-based NER service."""
-    if pdf_file is None:
-        return "<p style='color: red;'>Please upload a PDF file.</p>", ""
-
-    try:
-        with open(pdf_file, "rb") as f:
-            pdf_content = f.read()
-
-        files = {"file": ("document.pdf", pdf_content, "application/pdf")}
-        data = {"language": language, "fast": fast}
-
-        entities_response = requests.post(f"{NER_SERVICE_URL}/llm", files=files, data=data, timeout=300)
-
-        if entities_response.status_code == 200:
-            result = entities_response.json()
-            entities = result.get("entities", [])
-            entities_html = format_entities_html(entities)
-            json_response = json.dumps(result, indent=2)
-            return entities_html, json_response
-        else:
-            return f"<p style='color: red;'>Error: Service returned status code {entities_response.status_code}</p>", ""
-
-    except requests.exceptions.ConnectionError:
-        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>", ""
-    except Exception as e:
-        return f"<p style='color: red;'>Error: {str(e)}</p>", ""
-
-
-def save_texts_from_pdfs(pdf_files, namespace: str, identifier: str, language: str = "en", fast: bool = False) -> str:
-    """Save text from multiple PDFs using the save_text endpoint."""
-    if not pdf_files or len(pdf_files) == 0:
-        return "<p style='color: red;'>Please upload at least one PDF file.</p>"
-
-    if not namespace:
-        namespace = "default_namespace"
-
-    try:
-        results = []
-        for i, pdf_file in enumerate(pdf_files):
-            with open(pdf_file, "rb") as f:
-                pdf_content = f.read()
-
-            file_name = pdf_file.split("/")[-1] if "/" in pdf_file else pdf_file
-            files = {"file": (file_name, pdf_content, "application/pdf")}
-
-            current_identifier = f"{identifier}_{i+1}" if identifier else file_name
-            data = {"namespace": namespace, "identifier": current_identifier, "language": language, "fast": fast}
-
-            response = requests.post(f"{NER_SERVICE_URL}/save_text", files=files, data=data, timeout=300)
-
-            if response.status_code == 200:
-                results.append(f"✓ {file_name}: {response.text}")
-            else:
-                results.append(f"✗ {file_name}: Error - {response.status_code}")
-
-        return "<p>Processing Results:</p><ul>" + "".join([f"<li>{r}</li>" for r in results]) + "</ul>"
-
-    except requests.exceptions.ConnectionError:
-        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>"
-    except Exception as e:
-        return f"<p style='color: red;'>Error: {str(e)}</p>"
-
-
-def visualize_pdf(pdf_file, language: str = "en", fast: bool = False) -> Tuple[Optional[str], str]:
-    """Generate annotated PDF with entity highlights."""
-    if pdf_file is None:
-        return None, "<p style='color: red;'>Please upload a PDF file.</p>"
-
-    try:
-        with open(pdf_file, "rb") as f:
-            pdf_content = f.read()
-
-        files = {"file": ("document.pdf", pdf_content, "application/pdf")}
-        data = {"language": language, "fast": fast}
-
-        visualize_response = requests.post(f"{NER_SERVICE_URL}/visualize", files=files, data=data, timeout=300)
-
-        if visualize_response.status_code == 200:
-            temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-            temp_pdf.write(visualize_response.content)
-            temp_pdf.close()
-
-            import base64
-
-            pdf_base64 = base64.b64encode(visualize_response.content).decode("utf-8")
-            pdf_preview_html = f"""
-            <div style="width: 100%; height: 800px; border: 1px solid #ddd; border-radius: 5px; overflow: hidden;">
-                <iframe 
-                    src="data:application/pdf;base64,{pdf_base64}" 
-                    width="100%" 
-                    height="100%" 
-                    style="border: none;"
-                    type="application/pdf">
-                    <p>Your browser does not support embedded PDFs. Please download the file to view it.</p>
-                </iframe>
-            </div>
-            """
-            return temp_pdf.name, pdf_preview_html
-        else:
-            return None, f"<p style='color: red;'>Error: Service returned status code {visualize_response.status_code}</p>"
-
-    except requests.exceptions.ConnectionError:
-        return None, "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>"
-    except Exception as e:
-        return None, f"<p style='color: red;'>Error: {str(e)}</p>"
-
-
-def create_legend() -> str:
-    """Create a legend showing entity types and their colors."""
-    legend_html = "<div style='padding: 10px; background-color: #f5f5f5; border-radius: 5px; margin-bottom: 10px;'>"
-    legend_html += "<h4 style='margin-top: 0;'>Entity Types Legend:</h4>"
-    legend_html += "<div style='display: flex; flex-wrap: wrap; gap: 10px;'>"
-
-    entity_labels = {
-        "PERSON": "Person (PER)",
-        "ORGANIZATION": "Organization (ORG)",
-        "LOCATION": "Location (LOC)",
-        "DATE": "Date (DAT)",
-        "LAW": "Law (LAW)",
-        "DOCUMENT_CODE": "Document Code (DOC)",
-        "REFERENCE": "Reference (REF)",
-    }
-
-    for entity_type, label in entity_labels.items():
-        color = ENTITY_COLORS.get(entity_type, "#95A5A6")
-        legend_html += f'<span style="background-color: {color}; padding: 5px 10px; border-radius: 3px; color: white; font-weight: bold;">{label}</span>'
-
-    legend_html += "</div></div>"
-    return legend_html
-
-
-def wait_for_backend(max_retries: int = 60, retry_interval: int = 2) -> bool:
-    """Wait for the backend service to be ready by polling the info endpoint."""
-    print("\n" + "=" * 80, flush=True)
-    print("⏳ Waiting for NER backend service to be ready...".center(80), flush=True)
-    print("=" * 80 + "\n", flush=True)
-
-    for attempt in range(1, max_retries + 1):
-        try:
-            response = requests.get(f"{NER_SERVICE_URL}/", timeout=5)
-            if response.status_code == 200:
-                print("=" * 80, flush=True)
-                print("✅  NER UI IS READY!".center(80), flush=True)
-                print("=" * 80, flush=True)
-                print("", flush=True)
-                print("🌐 Access the UI at:", flush=True)
-                print("   → http://localhost:7860", flush=True)
-                print("", flush=True)
-                print("=" * 80, flush=True)
-                print("=" * 80 + "\n", flush=True)
-                return True
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            time.sleep(retry_interval)
-        except Exception as e:
-            print(f"   Unexpected error while checking backend: {str(e)}", flush=True)
-            time.sleep(retry_interval)
-
-    print("\n" + "=" * 80, flush=True)
-    print("❌ Backend service did not become ready in time!".center(80), flush=True)
-    print("=" * 80 + "\n", flush=True)
-    return False
+from gradio_ui.api import (
+    extract_entities_from_text,
+    extract_entities_from_pdf,
+    extract_entities_from_text_llm,
+    extract_entities_from_pdf_llm,
+    save_texts_from_pdfs,
+    visualize_pdf,
+    wait_for_backend,
+    get_identifiers,
+    get_segments,
+)
+from gradio_ui.formatters import create_legend
 
 
 # Create Gradio interface
@@ -313,6 +23,38 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
     gr.HTML(create_legend())
 
     with gr.Tabs():
+        # Tab 0: References
+        with gr.Tab("📚 References"):
+            gr.Markdown("### View References")
+
+            with gr.Row():
+                with gr.Column(scale=1):
+                    namespace_ref_input = gr.Textbox(
+                        label="Namespace",
+                        value="default_namespace",
+                    )
+                    refresh_btn = gr.Button("Refresh Identifiers")
+                    identifier_dropdown = gr.Dropdown(
+                        label="Identifiers",
+                        choices=[],
+                        value=None,
+                        interactive=True,
+                    )
+                with gr.Column(scale=2):
+                    segments_output = gr.Code(label="Segments", language="json", lines=20)
+
+            def update_dropdown(ns):
+                choices = get_identifiers(ns)
+                return gr.Dropdown(choices=choices, value=choices[0] if choices else None)
+
+            refresh_btn.click(fn=update_dropdown, inputs=[namespace_ref_input], outputs=[identifier_dropdown])
+
+            identifier_dropdown.change(
+                fn=get_segments,
+                inputs=[identifier_dropdown, namespace_ref_input],
+                outputs=[segments_output],
+            )
+
         # Tab 1: Save Texts from PDFs
         with gr.Tab("💾 Save Texts"):
             gr.Markdown("### Save text from multiple PDFs")
@@ -395,10 +137,12 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                 outputs=[entities_output, json_output_text],
             )
 
-        # Tab 2: PDF Entity Extraction
-        with gr.Tab("📄 PDF Entity Extraction"):
-            gr.Markdown("### Extract entities from PDF")
-            gr.Markdown("Upload a PDF document to extract named entities and get the JSON response.")
+        # Tab 2: PDF Entity Extraction & Visualization
+        with gr.Tab("📄 PDF Entity Extraction & Visualization"):
+            gr.Markdown("### Extract and Visualize entities from PDF")
+            gr.Markdown(
+                "Upload a PDF document to extract named entities, get the JSON response, or generate an annotated version."
+            )
 
             with gr.Row():
                 with gr.Column(scale=1):
@@ -414,11 +158,18 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                             label="Fast Mode", value=False, info="Enable for faster processing (less accurate segmentation)"
                         )
 
-                    extract_entities_btn = gr.Button("Extract Entities", variant="primary")
+                    with gr.Row():
+                        extract_entities_btn = gr.Button("Extract Entities", variant="primary")
+                        visualize_btn = gr.Button("Generate Visualization", variant="secondary")
 
                 with gr.Column(scale=2):
-                    with gr.Accordion("📋 Extracted Entities", open=True):
-                        entities_output_pdf = gr.HTML(label="Entities")
+                    with gr.Tabs():
+                        with gr.Tab("📋 Extracted Entities"):
+                            entities_output_pdf = gr.HTML(label="Entities")
+                        with gr.Tab("🎨 Visualization"):
+                            gr.Markdown("#### PDF Preview:")
+                            pdf_preview = gr.HTML(label="PDF Viewer")
+                            annotated_pdf_output = gr.File(label="Download Annotated PDF", interactive=False)
 
             with gr.Accordion("📋 View JSON Response", open=False):
                 json_output_pdf = gr.Code(label="JSON Response", language="json", lines=15)
@@ -429,35 +180,9 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                 outputs=[entities_output_pdf, json_output_pdf],
             )
 
-        # Tab 3: PDF Visualization
-        with gr.Tab("🎨 PDF Visualization"):
-            gr.Markdown("### Visualize entities in PDF")
-            gr.Markdown("Upload a PDF document to generate an annotated version with highlighted entities.")
-
-            with gr.Row():
-                with gr.Column(scale=1):
-                    pdf_input_viz = gr.File(label="Upload PDF", file_types=[".pdf"], type="filepath")
-                    with gr.Row():
-                        language_pdf_viz = gr.Dropdown(
-                            choices=["en", "es", "de", "fr"],
-                            value="en",
-                            label="Language",
-                            info="Select the language of your PDF",
-                        )
-                        fast_mode_viz = gr.Checkbox(
-                            label="Fast Mode", value=False, info="Enable for faster processing (less accurate segmentation)"
-                        )
-
-                    visualize_btn = gr.Button("Generate Visualization", variant="primary")
-
-                with gr.Column(scale=2):
-                    gr.Markdown("#### PDF Preview:")
-                    pdf_preview = gr.HTML(label="PDF Viewer")
-                    annotated_pdf_output = gr.File(label="Download Annotated PDF", interactive=False)
-
             visualize_btn.click(
                 fn=visualize_pdf,
-                inputs=[pdf_input_viz, language_pdf_viz, fast_mode_viz],
+                inputs=[pdf_input_entities, language_pdf_entities, fast_mode_entities],
                 outputs=[annotated_pdf_output, pdf_preview],
             )
 
@@ -508,43 +233,6 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                 fn=extract_entities_from_text_llm,
                 inputs=[text_input_llm, language_text_llm],
                 outputs=[entities_output_llm, json_output_text_llm],
-            )
-
-        # Tab 5: LLM PDF Extraction
-        with gr.Tab("🤖 LLM PDF Entity Extraction"):
-            gr.Markdown("### Extract entities from PDF using LLM")
-            gr.Markdown(
-                "Upload a PDF document and use Large Language Models (Ollama) for entity extraction. "
-                "This method can provide different results compared to traditional NER models."
-            )
-
-            with gr.Row():
-                with gr.Column(scale=1):
-                    pdf_input_entities_llm = gr.File(label="Upload PDF", file_types=[".pdf"], type="filepath")
-                    with gr.Row():
-                        language_pdf_entities_llm = gr.Dropdown(
-                            choices=["en", "es", "de", "fr"],
-                            value="en",
-                            label="Language",
-                            info="Select the language of your PDF",
-                        )
-                        fast_mode_entities_llm = gr.Checkbox(
-                            label="Fast Mode", value=False, info="Enable for faster processing (less accurate segmentation)"
-                        )
-
-                    extract_entities_llm_btn = gr.Button("Extract Entities (LLM)", variant="primary")
-
-                with gr.Column(scale=2):
-                    with gr.Accordion("📋 Extracted Entities", open=True):
-                        entities_output_pdf_llm = gr.HTML(label="Entities")
-
-            with gr.Accordion("📋 View JSON Response", open=False):
-                json_output_pdf_llm = gr.Code(label="JSON Response", language="json", lines=15)
-
-            extract_entities_llm_btn.click(
-                fn=extract_entities_from_pdf_llm,
-                inputs=[pdf_input_entities_llm, language_pdf_entities_llm, fast_mode_entities_llm],
-                outputs=[entities_output_pdf_llm, json_output_pdf_llm],
             )
 
     # Footer

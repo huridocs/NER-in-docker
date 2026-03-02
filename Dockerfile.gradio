@@ -30,6 +30,7 @@ RUN uv pip install -r requirements-gradio.txt
 WORKDIR /app
 
 COPY ./src/gradio_app.py ./src/gradio_app.py
+COPY ./src/gradio_ui ./src/gradio_ui
 
 ENV PYTHONPATH "${PYTHONPATH}:/app/src"
 ENV PYTHONUNBUFFERED=1

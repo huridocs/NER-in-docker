@@ -32,7 +32,7 @@ start:
 	mkdir -p ./data
 	if [ "{{HAS_GPU}}" = "1" ]; then
 		echo "NVIDIA GPU detected, using docker-compose-gpu.yml"
-		docker compose -f docker-compose-gpu.yml up --attach ner-gpu --attach ner-ui --build
+		docker compose -f docker-compose-gpu.yml up --build
 	else
 		echo "No NVIDIA GPU detected, using docker-compose.yml"
 		docker compose -f docker-compose.yml up --attach ner --attach ner-ui --build
