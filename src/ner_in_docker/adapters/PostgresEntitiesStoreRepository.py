@@ -67,7 +67,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
         )
         cursor.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.schema_name}.identifiers (
+            CREATE TABLE IF NOT EXISTS {self.schema_name}.identifiers_{self.language} (
                 id SERIAL PRIMARY KEY,
                 identifier TEXT UNIQUE NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -165,7 +165,8 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
         try:
             connection, cursor = self.get_connection()
             cursor.execute(
-                f"INSERT INTO {self.schema_name}.identifiers (identifier) VALUES (%s) ON CONFLICT DO NOTHING", (identifier,)
+                f"INSERT INTO {self.schema_name}.identifiers_{self.language} (identifier) VALUES (%s) ON CONFLICT DO NOTHING",
+                (identifier,),
             )
             connection.commit()
             connection.close()
@@ -180,7 +181,9 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         try:
             connection, cursor = self.get_connection()
-            cursor.execute(f"SELECT 1 FROM {self.schema_name}.identifiers WHERE identifier = %s", (identifier,))
+            cursor.execute(
+                f"SELECT 1 FROM {self.schema_name}.identifiers_{self.language} WHERE identifier = %s", (identifier,)
+            )
             result = cursor.fetchone() is not None
             connection.close()
             return result
@@ -196,7 +199,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
             cursor.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {self.schema_name}.segments (
+                CREATE TABLE IF NOT EXISTS {self.schema_name}.segments_{self.language} (
                     id SERIAL PRIMARY KEY,
                     text TEXT,
                     page_number INTEGER,
@@ -217,13 +220,24 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
             if source_ids:
                 format_strings = ",".join(["%s"] * len(source_ids))
                 cursor.execute(
-                    f"DELETE FROM {self.schema_name}.segments WHERE source_id IN ({format_strings})", tuple(source_ids)
+                    f"DELETE FROM {self.schema_name}.segments_{self.language} WHERE source_id IN ({format_strings})",
+                    tuple(source_ids),
                 )
+
+            cursor.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {self.schema_name}.identifiers_{self.language} (
+                    id SERIAL PRIMARY KEY,
+                    identifier TEXT UNIQUE NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+            )
 
             for segment in segments:
                 cursor.execute(
                     f"""
-                    INSERT INTO {self.schema_name}.segments (
+                    INSERT INTO {self.schema_name}.segments_{self.language} (
                         text, page_number, segment_number, type, source_id,
                         bounding_box_left, bounding_box_top, bounding_box_width, bounding_box_height,
                         page_width, page_height
@@ -244,9 +258,60 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
                     ),
                 )
 
+            for source_id in source_ids:
+                cursor.execute(
+                    f"INSERT INTO {self.schema_name}.identifiers_{self.language} (identifier) VALUES (%s) ON CONFLICT DO NOTHING",
+                    (source_id,),
+                )
+
             connection.commit()
             connection.close()
             return True
         except Exception as e:
             print(f"Error saving segments: {e}")
             return False
+
+    def get_segments(self, identifier: str) -> list[Segment]:
+        if not self.exists_schema():
+            return []
+
+        try:
+            connection, cursor = self.get_connection()
+            cursor.execute(f"SELECT * FROM {self.schema_name}.segments_{self.language} WHERE source_id = %s", (identifier,))
+            rows = cursor.fetchall()
+            connection.close()
+
+            segments = []
+            for row in rows:
+                from pdf_features import Rectangle
+
+                segments.append(
+                    Segment(
+                        text=row[1],
+                        page_number=row[2],
+                        segment_number=row[3],
+                        type=row[4],
+                        source_id=row[5],
+                        bounding_box=Rectangle.from_width_height(left=row[6], top=row[7], width=row[8], height=row[9]),
+                        page_width=row[10],
+                        page_height=row[11],
+                    )
+                )
+            return segments
+        except Exception as e:
+            print(f"Error getting segments: {e}")
+            return []
+
+    def get_identifiers(self) -> list[str]:
+        if not self.exists_schema():
+            return []
+
+        try:
+            connection, cursor = self.get_connection()
+            cursor.execute(f"SELECT identifier FROM {self.schema_name}.identifiers_{self.language}")
+            rows = cursor.fetchall()
+            connection.close()
+            return [row[0] for row in rows]
+        except Exception as e:
+            print(f"Error getting identifiers: {e}")
+            return []

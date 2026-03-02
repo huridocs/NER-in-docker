@@ -40,6 +40,19 @@ services:
               count: 1
               capabilities: [ gpu ]
 
+  postgres:
+    extends:
+      file: docker-compose.yml
+      service: postgres
+
+  adminer:
+    extends:
+      file: docker-compose.yml
+      service: adminer
+
 networks:
   network-ner:
     driver: bridge
+
+volumes:
+  postgres_data:

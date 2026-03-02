@@ -84,7 +84,7 @@ async def save_text(
     fast: bool = Form(False),
     language: str = Form("en"),
 ):
-    store_repository = PostgresEntitiesStoreRepository(language, namespace)
+    store_repository = PostgresEntitiesStoreRepository(namespace, language)
     if store_repository.is_processed(identifier):
         return "Already processed"
 

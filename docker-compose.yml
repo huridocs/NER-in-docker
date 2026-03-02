@@ -65,6 +65,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  adminer:
+    container_name: adminer
+    image: adminer:4
+    restart: unless-stopped
+    networks:
+      - network-ner
+    ports:
+      - "8080:8080"
+
 networks:
   network-ner:
     driver: bridge

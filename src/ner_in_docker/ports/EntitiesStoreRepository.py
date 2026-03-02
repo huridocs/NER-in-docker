@@ -11,7 +11,7 @@ class EntitiesStoreRepository(ABC):
         pass
 
     @abstractmethod
-    def save_entities(self, named_entities: list[NamedEntity]) -> None:
+    def save_entities(self, named_entities: list[NamedEntity]) -> bool:
         pass
 
     @abstractmethod
@@ -20,4 +20,12 @@ class EntitiesStoreRepository(ABC):
 
     @abstractmethod
     def save_segments(self, segments: list[Segment]) -> bool:
+        pass
+
+    @abstractmethod
+    def get_segments(self, identifier: str) -> list[Segment]:
+        pass
+
+    @abstractmethod
+    def get_identifiers(self) -> list[str]:
         pass

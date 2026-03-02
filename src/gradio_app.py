@@ -169,6 +169,41 @@ def extract_entities_from_pdf_llm(pdf_file, language: str = "en", fast: bool = F
         return f"<p style='color: red;'>Error: {str(e)}</p>", ""
 
 
+def save_texts_from_pdfs(pdf_files, namespace: str, identifier: str, language: str = "en", fast: bool = False) -> str:
+    """Save text from multiple PDFs using the save_text endpoint."""
+    if not pdf_files or len(pdf_files) == 0:
+        return "<p style='color: red;'>Please upload at least one PDF file.</p>"
+
+    if not namespace:
+        namespace = "default_namespace"
+
+    try:
+        results = []
+        for i, pdf_file in enumerate(pdf_files):
+            with open(pdf_file, "rb") as f:
+                pdf_content = f.read()
+
+            file_name = pdf_file.split("/")[-1] if "/" in pdf_file else pdf_file
+            files = {"file": (file_name, pdf_content, "application/pdf")}
+
+            current_identifier = f"{identifier}_{i+1}" if identifier else file_name
+            data = {"namespace": namespace, "identifier": current_identifier, "language": language, "fast": fast}
+
+            response = requests.post(f"{NER_SERVICE_URL}/save_text", files=files, data=data, timeout=300)
+
+            if response.status_code == 200:
+                results.append(f"✓ {file_name}: {response.text}")
+            else:
+                results.append(f"✗ {file_name}: Error - {response.status_code}")
+
+        return "<p>Processing Results:</p><ul>" + "".join([f"<li>{r}</li>" for r in results]) + "</ul>"
+
+    except requests.exceptions.ConnectionError:
+        return "<p style='color: red;'>Error: Cannot connect to NER service. Make sure it's running.</p>"
+    except Exception as e:
+        return f"<p style='color: red;'>Error: {str(e)}</p>"
+
+
 def visualize_pdf(pdf_file, language: str = "en", fast: bool = False) -> Tuple[Optional[str], str]:
     """Generate annotated PDF with entity highlights."""
     if pdf_file is None:
@@ -278,7 +313,43 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
     gr.HTML(create_legend())
 
     with gr.Tabs():
-        # Tab 1: Text Input
+        # Tab 1: Save Texts from PDFs
+        with gr.Tab("💾 Save Texts"):
+            gr.Markdown("### Save text from multiple PDFs")
+            gr.Markdown("Upload multiple PDF documents to extract and save their text content.")
+
+            with gr.Row():
+                with gr.Column(scale=1):
+                    pdf_files_input = gr.File(
+                        label="Upload PDFs", file_types=[".pdf"], type="filepath", file_count="multiple"
+                    )
+                    namespace_input = gr.Textbox(
+                        label="Namespace",
+                        placeholder="Enter namespace (e.g., 'my_docs')",
+                    )
+                    identifier_input = gr.Textbox(
+                        label="Identifier Prefix",
+                        placeholder="Enter identifier prefix (optional)",
+                    )
+                    with gr.Row():
+                        language_save = gr.Dropdown(
+                            choices=["en", "es", "de", "fr"],
+                            value="en",
+                            label="Language",
+                        )
+                        fast_mode_save = gr.Checkbox(label="Fast Mode", value=False, info="Enable for faster processing")
+                    save_btn = gr.Button("Save Texts", variant="primary")
+
+                with gr.Column(scale=2):
+                    save_output = gr.HTML(label="Results")
+
+            save_btn.click(
+                fn=save_texts_from_pdfs,
+                inputs=[pdf_files_input, namespace_input, identifier_input, language_save, fast_mode_save],
+                outputs=[save_output],
+            )
+
+        # Tab 2: Text Input
         with gr.Tab("📝 Text Extraction"):
             gr.Markdown("### Extract entities from text")
             gr.Markdown("Enter your text below and click 'Extract Entities' to identify named entities.")
