@@ -18,7 +18,22 @@ from gradio_ui.constants import NER_SERVICE_URL
 
 
 # Create Gradio interface
-with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
+with gr.Blocks(
+    title="Named Entity Recognition",
+    theme=gr.themes.Soft(),
+    css="""
+    #segments-scrollable {
+        max-height: 600px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    #segments-scrollable > div {
+        max-height: 600px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+""",
+) as app:
     gr.Markdown("# 🔍 Named Entity Recognition Service")
     gr.Markdown("Extract named entities from text or PDF documents using state-of-the-art NER models.")
 
@@ -43,12 +58,11 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                         value=None,
                         interactive=True,
                     )
+                    gr.Markdown("#### Segments")
+                    segments_container = gr.HTML(elem_id="segments-scrollable", elem_classes="scrollable-container")
                 with gr.Column(scale=2):
                     gr.Markdown("#### Segment Details")
                     selected_segment = gr.HTML(elem_id="segment-details")
-
-            gr.Markdown("#### Segments")
-            segments_container = gr.HTML()
 
             def update_dropdown(ns):
                 choices = get_identifiers(ns)
@@ -69,11 +83,10 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                         segments = response.json()
                         segments.sort(key=lambda x: x.get("segment_number", 0))
 
-                        cards_html = '<div style="display: flex; flex-wrap: wrap; gap: 10px;">'
+                        cards_html = '<div style="display: flex; flex-direction: column; gap: 10px;">'
                         for segment in segments:
-                            text = segment.get("text", "")[:100] + ("..." if len(segment.get("text", "")) > 100 else "")
-                            seg_num = segment.get("segment_number", "N/A")
                             full_text = segment.get("text", "N/A")
+                            seg_num = segment.get("segment_number", "N/A")
                             page = segment.get("page_number", "N/A")
                             seg_type = segment.get("type", "N/A")
                             source_id = segment.get("source_id", "N/A")
@@ -87,8 +100,10 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
 
                             details = f"## Segment {seg_num}\n\n**Text:** {full_text}\n\n**Page:** {page}\n\n**Type:** {seg_type}\n\n**Source ID:** {source_id}\n\n**Bounding Box:** {bbox_str}\n\n**Page Dimensions:** {page_dims}"
 
-                            cards_html += f"""<div style="flex: 1 1 200px;">
-                                <button class="gradio-button secondary sm" onclick="document.getElementById('segment-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`">{text}</button>
+                            cards_html += f"""<div style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">Segment {seg_num} (Page {page}, Type: {seg_type})</div>
+                                <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;">{full_text}</div>
+                                <button class="gradio-button secondary sm" onclick="document.getElementById('segment-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`">View Details</button>
                             </div>"""
                         cards_html += "</div>"
 
@@ -293,8 +308,8 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
 
 
 if __name__ == "__main__":
-    if not wait_for_backend():
-        print("❌ Failed to connect to backend service. Exiting...", flush=True)
-        exit(1)
+    # if not wait_for_backend():
+    #     print("❌ Failed to connect to backend service. Exiting...", flush=True)
+    #     exit(1)
 
     app.launch(server_name="0.0.0.0", server_port=7860, share=False, quiet=True)
