@@ -1,4 +1,6 @@
 import gradio as gr
+import requests
+import json
 
 from gradio_ui.api import (
     extract_entities_from_text,
@@ -12,6 +14,7 @@ from gradio_ui.api import (
     get_segments,
 )
 from gradio_ui.formatters import create_legend
+from gradio_ui.constants import NER_SERVICE_URL
 
 
 # Create Gradio interface
@@ -41,7 +44,11 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
                         interactive=True,
                     )
                 with gr.Column(scale=2):
-                    segments_output = gr.Code(label="Segments", language="json", lines=20)
+                    gr.Markdown("#### Segment Details")
+                    selected_segment = gr.HTML(elem_id="segment-details")
+
+            gr.Markdown("#### Segments")
+            segments_container = gr.HTML()
 
             def update_dropdown(ns):
                 choices = get_identifiers(ns)
@@ -49,10 +56,58 @@ with gr.Blocks(title="Named Entity Recognition", theme=gr.themes.Soft()) as app:
 
             refresh_btn.click(fn=update_dropdown, inputs=[namespace_ref_input], outputs=[identifier_dropdown])
 
+            def display_segments(identifier, namespace):
+                if not identifier:
+                    segments_container.value = ""
+                    selected_segment.value = ""
+                    return
+
+                try:
+                    response = requests.get(
+                        f"{NER_SERVICE_URL}/segments", params={"identifier": identifier, "namespace": namespace}, timeout=30
+                    )
+
+                    if response.status_code == 200:
+                        segments = response.json()
+                        segments.sort(key=lambda x: x.get("segment_number", 0))
+
+                        cards_html = '<div style="display: flex; flex-wrap: wrap; gap: 10px;">'
+                        for segment in segments:
+                            text = segment.get("text", "")[:100] + ("..." if len(segment.get("text", "")) > 100 else "")
+                            seg_num = segment.get("segment_number", "N/A")
+                            full_text = segment.get("text", "N/A")
+                            page = segment.get("page_number", "N/A")
+                            seg_type = segment.get("type", "N/A")
+                            source_id = segment.get("source_id", "N/A")
+                            bbox = segment.get("bounding_box", {})
+                            bbox_str = (
+                                f"x={bbox.get('x', 'N/A')}, y={bbox.get('y', 'N/A')}, width={bbox.get('width', 'N/A')}, height={bbox.get('height', 'N/A')}"
+                                if bbox
+                                else "N/A"
+                            )
+                            page_dims = f"{segment.get('page_width', 'N/A')}x{segment.get('page_height', 'N/A')}"
+
+                            details = f"## Segment {seg_num}\n\n**Text:** {full_text}\n\n**Page:** {page}\n\n**Type:** {seg_type}\n\n**Source ID:** {source_id}\n\n**Bounding Box:** {bbox_str}\n\n**Page Dimensions:** {page_dims}"
+
+                            cards_html += f"""<div style="flex: 1 1 200px;">
+                                <button class="gradio-button secondary sm" onclick="document.getElementById('segment-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`">{text}</button>
+                            </div>"""
+                        cards_html += "</div>"
+
+                        segments_container.value = cards_html
+                        selected_segment.value = "<p>Click a segment to view details</p>"
+                    else:
+                        segments_container.value = f"<p>Error: {response.status_code}</p>"
+                        selected_segment.value = ""
+
+                except Exception as e:
+                    segments_container.value = f"<p>Error: {str(e)}</p>"
+                    selected_segment.value = ""
+
             identifier_dropdown.change(
-                fn=get_segments,
+                fn=display_segments,
                 inputs=[identifier_dropdown, namespace_ref_input],
-                outputs=[segments_output],
+                outputs=[segments_container, selected_segment],
             )
 
         # Tab 1: Save Texts from PDFs
