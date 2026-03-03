@@ -40,59 +40,6 @@ with gr.Blocks(
     gr.Markdown("# 🔍 Named Entity Recognition Service")
     gr.Markdown("Extract named entities from text or PDF documents using state-of-the-art NER models.")
 
-    gr.HTML(
-        """
-    <script>
-    function selectSegment(segId, segText, segNum, pageNum, segType) {
-        // Find the hidden inputs and button in the Gradio form
-        const inputs = document.querySelectorAll('input[type="text"]');
-        const buttons = document.querySelectorAll('button');
-        
-        // Encode segment_id in the text with a delimiter
-        const encodedText = segText + ":::SEGID:::" + segId;
-        
-        // Look for the hidden inputs by their labels
-        for (let input of inputs) {
-            if (input.labels && input.labels()[0]) {
-                const labelText = input.labels()[0].textContent;
-                if (labelText === 'selected_segment_id') {
-                    input.value = segId;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                } else if (labelText === 'segment_text') {
-                    input.value = encodedText;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                } else if (labelText === 'segment_num') {
-                    input.value = segNum;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                } else if (labelText === 'segment_page') {
-                    input.value = pageNum;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                } else if (labelText === 'segment_type') {
-                    input.value = segType;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-            }
-        }
-        
-        // Find and click the Select Segment button
-        for (let btn of buttons) {
-            if (btn.textContent.trim() === 'Select Segment') {
-                btn.click();
-                break;
-            }
-        }
-        
-        // Update the segment details display
-        const details = "## Segment " + segNum + "\\n\\n**Text:** " + segText;
-        const detailsElem = document.getElementById('segment-details');
-        if (detailsElem) {
-            detailsElem.innerHTML = details.replace(/\\n/g, '<br>');
-        }
-    }
-    </script>
-    """
-    )
-
     # Display legend
     gr.HTML(create_legend())
 
@@ -115,17 +62,16 @@ with gr.Blocks(
                         interactive=True,
                     )
                     gr.Markdown("#### Segments")
-                    segments_container = gr.HTML(elem_id="segments-scrollable", elem_classes="scrollable-container")
+                    segments_df = gr.Dataframe(
+                        headers=["#", "Page", "Type", "Text"],
+                        datatype=["number", "number", "str", "str"],
+                        interactive=False,
+                        wrap=True,
+                    )
                 with gr.Column(scale=2):
                     gr.Markdown("#### Segment Details")
-                    selected_segment = gr.HTML(elem_id="segment-details")
-                    selected_segment_id = gr.Textbox(visible=False, label="selected_segment_id")
-
-                    segment_text_input = gr.Textbox(visible=False, label="segment_text")
-                    segment_num_input = gr.Textbox(visible=False, label="segment_num")
-                    segment_page_input = gr.Textbox(visible=False, label="segment_page")
-                    segment_type_input = gr.Textbox(visible=False, label="segment_type")
-                    select_segment_btn = gr.Button("Select Segment", visible=False)
+                    selected_segment = gr.HTML("<p>Click a row in the segments table to view details.</p>")
+                    selected_segment_id = gr.State(None)
 
                     gr.Markdown("#### Create Reference")
                     reference_text_input = gr.Textbox(
@@ -139,104 +85,82 @@ with gr.Blocks(
                     create_reference_btn = gr.Button("Create Reference", variant="primary")
                     create_reference_output = gr.HTML()
 
+            segments_state = gr.State([])
+
+            def load_segments(identifier, namespace):
+                if not identifier:
+                    return [], []
+                try:
+                    response = requests.get(
+                        f"{NER_SERVICE_URL}/segments",
+                        params={"identifier": identifier, "namespace": namespace},
+                        timeout=30,
+                    )
+                    if response.status_code == 200:
+                        segments = response.json()
+                        segments.sort(key=lambda x: x.get("segment_number", 0))
+                        rows = [
+                            [
+                                seg.get("segment_number", ""),
+                                seg.get("page_number", ""),
+                                seg.get("type", ""),
+                                seg.get("text", ""),
+                            ]
+                            for seg in segments
+                        ]
+                        return segments, rows
+                    return [], []
+                except Exception:
+                    return [], []
+
+            def on_segment_select(segments, evt: gr.SelectData):
+                row = evt.index[0]
+                if row >= len(segments):
+                    return "<p>No segment selected.</p>", None
+                seg = segments[row]
+                seg_id = seg.get("id")
+                seg_num = seg.get("segment_number", "N/A")
+                page = seg.get("page_number", "N/A")
+                seg_type = seg.get("type", "N/A")
+                text = seg.get("text", "")
+                html = (
+                    f"<div style='padding:10px;border:1px solid #ddd;border-radius:5px;background:#f9f9f9;'>"
+                    f"<p><strong>Segment:</strong> {seg_num} &nbsp; <strong>Page:</strong> {page} &nbsp; "
+                    f"<strong>Type:</strong> {seg_type} &nbsp; <strong>ID:</strong> {seg_id}</p>"
+                    f"<p style='white-space:pre-wrap;word-wrap:break-word;'><strong>Text:</strong> {text}</p>"
+                    f"</div>"
+                )
+                return html, seg_id
+
             def update_dropdown(ns):
                 choices = get_identifiers(ns)
                 if choices:
-                    segments_html, details_html, seg_id = display_segments(choices[0], ns)
-                    return gr.update(choices=choices, value=choices[0]), segments_html, details_html, seg_id
-                return gr.update(choices=[], value=None), "", "", None
-
-            def select_segment(segment_id_from_state, segment_text, segment_num, page_num, segment_type):
-                # Extract segment_id from encoded text if present
-                actual_segment_id = segment_id_from_state
-                if segment_text and ":::SEGID:::" in segment_text:
-                    parts = segment_text.split(":::SEGID:::")
-                    actual_segment_id = parts[-1] if parts else ""
-                    segment_text = parts[0] if len(parts) > 1 else segment_text
-
-                if not actual_segment_id or actual_segment_id.strip() == "":
-                    return "<p>No segment selected</p>", ""
-
-                seg_id = actual_segment_id.strip()
-                details = f"## Segment {segment_num}\n\n**Text:** {segment_text}"
-                return details, seg_id
+                    segs, rows = load_segments(choices[0], ns)
+                    return gr.update(choices=choices, value=choices[0]), segs, rows
+                return gr.update(choices=[], value=None), [], []
 
             refresh_btn.click(
                 fn=update_dropdown,
                 inputs=[namespace_ref_input],
-                outputs=[identifier_dropdown, segments_container, selected_segment, selected_segment_id],
+                outputs=[identifier_dropdown, segments_state, segments_df],
+            )
+
+            identifier_dropdown.change(
+                fn=load_segments,
+                inputs=[identifier_dropdown, namespace_ref_input],
+                outputs=[segments_state, segments_df],
+            )
+
+            segments_df.select(
+                fn=on_segment_select,
+                inputs=[segments_state],
+                outputs=[selected_segment, selected_segment_id],
             )
 
             create_reference_btn.click(
                 fn=create_reference,
                 inputs=[namespace_ref_input, selected_segment_id, reference_text_input, to_input],
                 outputs=[create_reference_output],
-            )
-
-            select_segment_btn.click(
-                fn=select_segment,
-                inputs=[selected_segment_id, segment_text_input, segment_num_input, segment_page_input, segment_type_input],
-                outputs=[selected_segment, selected_segment_id],
-            )
-
-            def display_segments(identifier, namespace):
-                if not identifier:
-                    return "", "", None
-
-                try:
-                    response = requests.get(
-                        f"{NER_SERVICE_URL}/segments", params={"identifier": identifier, "namespace": namespace}, timeout=30
-                    )
-
-                    if response.status_code == 200:
-                        segments = response.json()
-                        segments.sort(key=lambda x: x.get("segment_number", 0))
-
-                        first_segment_id = segments[0].get("id") if segments else None
-
-                        cards_html = '<div style="display: flex; flex-direction: column; gap: 10px;">'
-                        for segment in segments:
-                            full_text = segment.get("text", "N/A")
-                            seg_num = segment.get("segment_number", "N/A")
-                            page = segment.get("page_number", "N/A")
-                            seg_type = segment.get("type", "N/A")
-                            source_id = segment.get("source_id", "N/A")
-                            seg_id = segment.get("id")
-                            bbox = segment.get("bounding_box", {})
-                            bbox_str = (
-                                f"x={bbox.get('x', 'N/A')}, y={bbox.get('y', 'N/A')}, width={bbox.get('width', 'N/A')}, height={bbox.get('height', 'N/A')}"
-                                if bbox
-                                else "N/A"
-                            )
-                            page_dims = f"{segment.get('page_width', 'N/A')}x{segment.get('page_height', 'N/A')}"
-
-                            details = f"## Segment {seg_num}\n\n**Text:** {full_text}"
-
-                            # Escape the text for use in JavaScript
-                            escaped_text = full_text.replace("'", "\\'").replace("`", "&#96;").replace("\n", " ")
-
-                            cards_html += f"""<div style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">Segment {seg_num} (Page {page}, Type: {seg_type})</div>
-                                <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;">{full_text}</div>
-                                <button class="gradio-button secondary sm" onclick="selectSegment('{seg_id}', '{escaped_text}', '{seg_num}', '{page}', '{seg_type}')">Select</button>
-                            </div>"""
-                        cards_html += "</div>"
-
-                        return (
-                            cards_html,
-                            "<p>Click a segment to view details</p>",
-                            first_segment_id,
-                        )
-                    else:
-                        return f"<p>Error: {response.status_code}</p>", "", None
-
-                except Exception as e:
-                    return f"<p>Error: {str(e)}</p>", "", None
-
-            identifier_dropdown.change(
-                fn=display_segments,
-                inputs=[identifier_dropdown, namespace_ref_input],
-                outputs=[segments_container, selected_segment, selected_segment_id],
             )
 
         # Tab: Manage References
