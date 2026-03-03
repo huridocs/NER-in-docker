@@ -320,6 +320,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
                 segments.append(
                     Segment(
+                        id=row[0],
                         text=row[1],
                         page_number=row[2],
                         segment_number=row[3],
@@ -355,26 +356,24 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
         try:
             connection, cursor = self.get_connection()
 
-            # Insert destination group if not exists
             cursor.execute(
-                f"""
-                INSERT INTO {self.schema_name}.named_entities_group (name)
-                VALUES (%s)
-                ON CONFLICT (name) DO NOTHING
-                RETURNING id
-                """,
+                f"SELECT id FROM {self.schema_name}.named_entities_group WHERE name = %s",
                 (to_text,),
             )
-            result = cursor.fetchone()
-            if result is not None:
-                destination_id = result[0]
+            row = cursor.fetchone()
+            if row is not None:
+                destination_id = row[0]
             else:
                 cursor.execute(
-                    f"SELECT id FROM {self.schema_name}.named_entities_group WHERE name = %s",
+                    f"""
+                    INSERT INTO {self.schema_name}.named_entities_group (name)
+                    VALUES (%s)
+                    RETURNING id
+                    """,
                     (to_text,),
                 )
-                row = cursor.fetchone()
-                destination_id = row[0] if row is not None else None
+                result = cursor.fetchone()
+                destination_id = result[0] if result is not None else None
 
             # Get segment details - now we just use segment_id directly
 

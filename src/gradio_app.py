@@ -66,8 +66,16 @@ with gr.Blocks(
                 with gr.Column(scale=2):
                     gr.Markdown("#### Segment Details")
                     selected_segment = gr.HTML(elem_id="segment-details")
+                    selected_segment_id = gr.Textbox(elem_id="selected-segment-id", visible=False)
 
                     gr.Markdown("#### Create Reference")
+                    segment_dropdown = gr.Dropdown(
+                        label="Select Segment",
+                        choices=[],
+                        value=None,
+                        interactive=True,
+                        elem_classes=["segment-dropdown"],
+                    )
                     reference_text_input = gr.Textbox(
                         label="Reference Text",
                         placeholder="Enter reference text...",
@@ -81,19 +89,21 @@ with gr.Blocks(
 
             def update_dropdown(ns):
                 choices = get_identifiers(ns)
-                return gr.Dropdown(choices=choices, value=choices[0] if choices else None)
+                return gr.Dropdown(choices=choices, value=choices[0] if choices else None), []
 
-            refresh_btn.click(fn=update_dropdown, inputs=[namespace_ref_input], outputs=[identifier_dropdown])
+            refresh_btn.click(
+                fn=update_dropdown, inputs=[namespace_ref_input], outputs=[identifier_dropdown, segment_dropdown]
+            )
 
             create_reference_btn.click(
                 fn=create_reference,
-                inputs=[namespace_ref_input, reference_text_input, to_input],
+                inputs=[namespace_ref_input, segment_dropdown, reference_text_input, to_input],
                 outputs=[create_reference_output],
             )
 
             def display_segments(identifier, namespace):
                 if not identifier:
-                    return "", ""
+                    return "", "", []
 
                 try:
                     response = requests.get(
@@ -104,6 +114,7 @@ with gr.Blocks(
                         segments = response.json()
                         segments.sort(key=lambda x: x.get("segment_number", 0))
 
+                        segment_choices = []
                         cards_html = '<div style="display: flex; flex-direction: column; gap: 10px;">'
                         for segment in segments:
                             full_text = segment.get("text", "N/A")
@@ -111,6 +122,7 @@ with gr.Blocks(
                             page = segment.get("page_number", "N/A")
                             seg_type = segment.get("type", "N/A")
                             source_id = segment.get("source_id", "N/A")
+                            seg_id = segment.get("id")
                             bbox = segment.get("bounding_box", {})
                             bbox_str = (
                                 f"x={bbox.get('x', 'N/A')}, y={bbox.get('y', 'N/A')}, width={bbox.get('width', 'N/A')}, height={bbox.get('height', 'N/A')}"
@@ -121,24 +133,33 @@ with gr.Blocks(
 
                             details = f"## Segment {seg_num}\n\n**Text:** {full_text}"
 
+                            if seg_id is not None:
+                                label = f"Segment {seg_num} (Page {page})"
+                                segment_choices.append((label, seg_id))
+
                             cards_html += f"""<div style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
                                 <div style="font-weight: bold; margin-bottom: 5px;">Segment {seg_num} (Page {page}, Type: {seg_type})</div>
                                 <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;">{full_text}</div>
-                                <button class="gradio-button secondary sm" onclick="document.getElementById('segment-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`">View Details</button>
+                                <button class="gradio-button secondary sm" onclick="document.getElementById('segment-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`; document.getElementById('selected-segment-id').value = '{seg_id}'; document.getElementById('selected-segment-id').dispatchEvent(new Event('change'));"">Select</button>
                             </div>"""
                         cards_html += "</div>"
 
-                        return cards_html, "<p>Click a segment to view details</p>"
+                        default_value = segment_choices[0][1] if segment_choices else None
+                        return (
+                            cards_html,
+                            "<p>Click a segment to view details</p>",
+                            gr.Dropdown(choices=segment_choices, value=default_value),
+                        )
                     else:
-                        return f"<p>Error: {response.status_code}</p>", ""
+                        return f"<p>Error: {response.status_code}</p>", "", []
 
                 except Exception as e:
-                    return f"<p>Error: {str(e)}</p>", ""
+                    return f"<p>Error: {str(e)}</p>", "", []
 
             identifier_dropdown.change(
                 fn=display_segments,
                 inputs=[identifier_dropdown, namespace_ref_input],
-                outputs=[segments_container, selected_segment],
+                outputs=[segments_container, selected_segment, segment_dropdown],
             )
 
         # Tab: Manage References

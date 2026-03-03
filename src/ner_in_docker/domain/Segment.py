@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 
 class Segment(BaseModel):
+    id: int | None = None
     text: str
     page_number: int
     segment_number: int

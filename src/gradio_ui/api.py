@@ -260,7 +260,7 @@ def get_segments(identifier: str, namespace: str = "default_namespace") -> str:
         return str(e)
 
 
-def create_reference(namespace: str, reference_text: str, to_text: str) -> str:
+def create_reference(namespace: str, segment_id: int | None, reference_text: str, to_text: str) -> str:
     """Create a reference in the backend."""
     if not namespace:
         namespace = "default_namespace"
@@ -268,7 +268,7 @@ def create_reference(namespace: str, reference_text: str, to_text: str) -> str:
         return "<p style='color: red;'>Please provide reference text and target text.</p>"
 
     try:
-        data = {"namespace": namespace, "reference_text": reference_text, "to_text": to_text}
+        data = {"namespace": namespace, "segment_id": segment_id, "reference_text": reference_text, "to_text": to_text}
         response = requests.post(f"{NER_SERVICE_URL}/create_reference", data=data, timeout=30)
 
         if response.status_code == 200:
