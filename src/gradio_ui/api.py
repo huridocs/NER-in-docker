@@ -269,10 +269,10 @@ def create_reference(namespace: str, segment_id: str | None, reference_text: str
 
     try:
         segment_id_int = None
-        if segment_id and segment_id.strip():
+        if segment_id:
             try:
                 segment_id_int = int(segment_id)
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
 
         data = {"namespace": namespace, "segment_id": segment_id_int, "reference_text": reference_text, "to_text": to_text}
