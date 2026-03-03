@@ -15,7 +15,8 @@ from ner_in_docker.use_cases.GetGeolocationUseCase import GetGeolocationUseCase
 from ner_in_docker.use_cases.GetPositionsUseCase import GetPositionsUseCase
 from ner_in_docker.use_cases.GroupNamedEntitiesUseCase import GroupNamedEntitiesUseCase
 from ner_in_docker.use_cases.NamedEntitiesUseCase import NamedEntitiesUseCase
-from ner_in_docker.use_cases.NamedEntitiesLLMUseCase import NamedEntitiesLLMUseCase
+
+# from ner_in_docker.use_cases.NamedEntitiesLLMUseCase import NamedEntitiesLLMUseCase
 from ner_in_docker.use_cases.ReferencesUseCase import ReferencesUseCase
 from ner_in_docker.use_cases.VisualizeEntitiesUseCase import VisualizeEntitiesUseCase
 import logging

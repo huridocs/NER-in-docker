@@ -32,13 +32,13 @@ services:
     container_name: ner-ui
     build:
       context: .
-      dockerfile: Dockerfile.gradio
+      dockerfile: Dockerfile.streamlit
     init: true
     restart: unless-stopped
     networks:
       - network-ner
     ports:
-      - "7860:7860"
+      - "8501:8501"
 
 #  ollama:
 #    container_name: ollama
