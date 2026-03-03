@@ -1,3 +1,4 @@
+from typing import Optional
 from dateparser.search import search_dates
 from dateparser_data.settings import default_parsers
 from pdf_features.Rectangle import Rectangle
@@ -28,7 +29,7 @@ class NamedEntity(BaseModel):
     percentage_to_segment_text: int = 0
     first_type_appearance: bool = False
     last_type_appearance: bool = False
-    segment: Segment = None
+    segment: Optional[Segment] = None
     text_positions: list[Rectangle] = []
     relevance_percentage: int = 0
 

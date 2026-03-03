@@ -7,7 +7,6 @@ from starlette.responses import FileResponse
 from ner_in_docker.adapters.PDFLayoutAnalysisRepository import PDFLayoutAnalysisRepository
 from ner_in_docker.adapters.PDFVisualizationRepository import PDFVisualizationRepository
 from ner_in_docker.adapters.PostgresEntitiesStoreRepository import PostgresEntitiesStoreRepository
-from ner_in_docker.adapters.SQLiteEntitiesStoreRepository import SQLiteEntitiesStoreRepository
 
 from ner_in_docker.domain.Segment import Segment
 from ner_in_docker.drivers.rest.catch_exceptions import catch_exceptions
@@ -56,7 +55,7 @@ async def get_named_entities(
     else:
         segments = [Segment.from_text(text=text if text else "", source_id=identifier)]
 
-    entities_from_db = SQLiteEntitiesStoreRepository(namespace).get_entities() if namespace else list()
+    entities_from_db = PostgresEntitiesStoreRepository(namespace, language).get_entities() if namespace else list()
 
     extractor_use_case = NamedEntitiesLLMUseCase(language) if use_llm else NamedEntitiesUseCase(language)
     named_entities = extractor_use_case.get_entities_from_segments(segments)
@@ -66,7 +65,7 @@ async def get_named_entities(
     named_entities_groups = GroupNamedEntitiesUseCase(entities_from_db, language).group(named_entities)
 
     if namespace:
-        repository = SQLiteEntitiesStoreRepository(namespace)
+        repository = PostgresEntitiesStoreRepository(namespace, language)
         repository.save_entities(named_entities)
         if identifier:
             repository.save_identifier(identifier)
@@ -117,18 +116,18 @@ async def save_text(
 
 @app.post("/delete_namespace")
 @catch_exceptions
-async def delete_namespace(namespace: str = Form(None)):
-    SQLiteEntitiesStoreRepository(namespace).delete_database()
+async def delete_namespace(namespace: str = Form(None), language: str = Form("en")):
+    PostgresEntitiesStoreRepository(namespace, language).delete_database()
     return "Deleted"
 
 
 @app.post("/is_processed")
 @catch_exceptions
-async def is_processed(namespace: str = Form(None), identifier: str = Form(None)):
+async def is_processed(namespace: str = Form(None), identifier: str = Form(None), language: str = Form("en")):
     if not namespace or not identifier:
         return False
 
-    exists = SQLiteEntitiesStoreRepository(namespace).is_processed(identifier)
+    exists = PostgresEntitiesStoreRepository(namespace, language).is_processed(identifier)
     return exists
 
 
@@ -171,7 +170,7 @@ async def get_named_entities_llm(
     else:
         segments = [Segment.from_text(text=text if text else "", source_id=identifier)]
 
-    entities_from_db = SQLiteEntitiesStoreRepository(namespace).get_entities() if namespace else list()
+    entities_from_db = PostgresEntitiesStoreRepository(namespace, language).get_entities() if namespace else list()
 
     named_entities = NamedEntitiesLLMUseCase(language).get_entities_from_segments(segments)
     named_entities += ReferencesUseCase(entities_from_db).get_entities_from_segments(segments)
@@ -180,7 +179,7 @@ async def get_named_entities_llm(
     named_entities_groups = GroupNamedEntitiesUseCase(entities_from_db, language).group(named_entities)
 
     if namespace:
-        repository = SQLiteEntitiesStoreRepository(namespace)
+        repository = PostgresEntitiesStoreRepository(namespace, language)
         repository.save_entities(named_entities)
         if identifier:
             repository.save_identifier(identifier)
@@ -192,13 +191,13 @@ async def get_named_entities_llm(
 @catch_exceptions
 async def create_reference(
     namespace: str = Form(...),
-    segment_text: str = Form(None),
+    segment_id: int = Form(None),
     reference_text: str = Form(...),
     to_text: str = Form(...),
     language: str = Form("en"),
 ):
     store_repository = PostgresEntitiesStoreRepository(namespace, language)
-    success = store_repository.save_reference(segment_text, reference_text, to_text)
+    success = store_repository.save_reference(segment_id, reference_text, to_text)
     if success:
         return {"status": "success", "message": "Reference created successfully"}
     else:

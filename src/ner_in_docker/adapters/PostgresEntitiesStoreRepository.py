@@ -18,7 +18,11 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
     def get_connection(self):
         connection = psycopg2.connect(
-            host=self.host, port=self.port, dbname=self.dbname, user=self.user, password=self.password
+            host=self.host,
+            port=self.port,
+            dbname=self.dbname,
+            user=self.user,
+            password=self.password,
         )
         cursor = connection.cursor()
         return connection, cursor
@@ -26,7 +30,10 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
     def exists_schema(self) -> bool:
         try:
             connection, cursor = self.get_connection()
-            cursor.execute("SELECT schema_name FROM information_schema.schemata WHERE schema_name = %s", (self.schema_name,))
+            cursor.execute(
+                "SELECT schema_name FROM information_schema.schemata WHERE schema_name = %s",
+                (self.schema_name,),
+            )
             exists = cursor.fetchone() is not None
             connection.close()
             return exists
@@ -40,6 +47,33 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         cursor.execute(
             f"""
+            CREATE TABLE IF NOT EXISTS {self.schema_name}.named_entities_group (
+                id SERIAL PRIMARY KEY,
+                name TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+        )
+        cursor.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.schema_name}.segments (
+                id SERIAL PRIMARY KEY,
+                text TEXT,
+                page_number INTEGER,
+                segment_number INTEGER,
+                type TEXT,
+                source_id TEXT,
+                bounding_box_left INTEGER,
+                bounding_box_top INTEGER,
+                bounding_box_width INTEGER,
+                bounding_box_height INTEGER,
+                page_width INTEGER,
+                page_height INTEGER
+            )
+        """
+        )
+        cursor.execute(
+            f"""
             CREATE TABLE IF NOT EXISTS {self.schema_name}.named_entities (
                 id SERIAL PRIMARY KEY,
                 type TEXT NOT NULL,
@@ -47,16 +81,8 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
                 normalized_text TEXT,
                 character_start INTEGER,
                 character_end INTEGER,
-                group_name TEXT,
-                segment_text TEXT,
-                segment_page_number INTEGER,
-                segment_segment_number INTEGER,
-                segment_type TEXT,
-                segment_source_id TEXT,
-                segment_bounding_box_left INTEGER,
-                segment_bounding_box_top INTEGER,
-                segment_bounding_box_width INTEGER,
-                segment_bounding_box_height INTEGER,
+                group_id INTEGER REFERENCES {self.schema_name}.named_entities_group(id),
+                segment_id INTEGER REFERENCES {self.schema_name}.segments(id),
                 appearance_count INTEGER,
                 percentage_to_segment_text INTEGER,
                 first_type_appearance BOOLEAN,
@@ -70,17 +96,6 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
             CREATE TABLE IF NOT EXISTS {self.schema_name}.identifiers (
                 id SERIAL PRIMARY KEY,
                 identifier TEXT UNIQUE NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-        )
-        cursor.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.schema_name}.references (
-                id SERIAL PRIMARY KEY,
-                segment_text TEXT,
-                reference_text TEXT NOT NULL,
-                to_text TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """
@@ -107,25 +122,36 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
             self.create_database()
         try:
             connection, cursor = self.get_connection()
-            source_ids = set(entity.segment.source_id for entity in named_entities)
+            source_ids = set(entity.segment.source_id for entity in named_entities if entity.segment is not None)
             if source_ids:
                 format_strings = ",".join(["%s"] * len(source_ids))
                 cursor.execute(
-                    f"DELETE FROM {self.schema_name}.named_entities WHERE segment_source_id IN ({format_strings})",
+                    f"""DELETE FROM {self.schema_name}.named_entities 
+                    WHERE segment_id IN (SELECT id FROM {self.schema_name}.segments WHERE source_id IN ({format_strings}))""",
                     tuple(source_ids),
                 )
                 connection.commit()
 
             for entity in named_entities:
                 persistence = EntityPersistence.from_named_entity(entity)
+
+                segment_id = None
+                if entity.segment and entity.segment.source_id:
+                    cursor.execute(
+                        f"SELECT id FROM {self.schema_name}.segments WHERE source_id = %s",
+                        (entity.segment.source_id,),
+                    )
+                    seg_row = cursor.fetchone()
+                    if seg_row:
+                        segment_id = seg_row[0]
+
                 cursor.execute(
                     f"""
                     INSERT INTO {self.schema_name}.named_entities (
-                        type, text, normalized_text, character_start, character_end, group_name,
-                        segment_text, segment_page_number, segment_segment_number, segment_type, segment_source_id,
-                        segment_bounding_box_left, segment_bounding_box_top, segment_bounding_box_width, segment_bounding_box_height,
+                        type, text, normalized_text, character_start, character_end, group_id,
+                        segment_id,
                         appearance_count, percentage_to_segment_text, first_type_appearance, last_type_appearance, relevance_percentage
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         str(persistence.type),
@@ -133,16 +159,8 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
                         persistence.normalized_text,
                         persistence.character_start,
                         persistence.character_end,
-                        persistence.group_name,
-                        persistence.segment_text,
-                        persistence.segment_page_number,
-                        persistence.segment_segment_number,
-                        persistence.segment_type,
-                        persistence.segment_source_id,
-                        persistence.segment_bounding_box_left,
-                        persistence.segment_bounding_box_top,
-                        persistence.segment_bounding_box_width,
-                        persistence.segment_bounding_box_height,
+                        None,
+                        segment_id,
                         persistence.appearance_count,
                         persistence.percentage_to_segment_text,
                         persistence.first_type_appearance,
@@ -192,7 +210,10 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         try:
             connection, cursor = self.get_connection()
-            cursor.execute(f"SELECT 1 FROM {self.schema_name}.identifiers WHERE identifier = %s", (identifier,))
+            cursor.execute(
+                f"SELECT 1 FROM {self.schema_name}.identifiers WHERE identifier = %s",
+                (identifier,),
+            )
             result = cursor.fetchone() is not None
             connection.close()
             return result
@@ -286,7 +307,10 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         try:
             connection, cursor = self.get_connection()
-            cursor.execute(f"SELECT * FROM {self.schema_name}.segments WHERE source_id = %s", (identifier,))
+            cursor.execute(
+                f"SELECT * FROM {self.schema_name}.segments WHERE source_id = %s",
+                (identifier,),
+            )
             rows = cursor.fetchall()
             connection.close()
 
@@ -325,17 +349,57 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
             print(f"Error getting identifiers: {e}")
             return []
 
-    def save_reference(self, segment_text: str, reference_text: str, to_text: str) -> bool:
+    def save_reference(self, segment_id: int | None, reference_text: str, to_text: str) -> bool:
         self.create_database()
 
         try:
             connection, cursor = self.get_connection()
+
+            # Insert destination group if not exists
             cursor.execute(
                 f"""
-                INSERT INTO {self.schema_name}.references (segment_text, reference_text, to_text)
-                VALUES (%s, %s, %s)
+                INSERT INTO {self.schema_name}.named_entities_group (name)
+                VALUES (%s)
+                ON CONFLICT (name) DO NOTHING
+                RETURNING id
                 """,
-                (segment_text, reference_text, to_text),
+                (to_text,),
+            )
+            result = cursor.fetchone()
+            if result is not None:
+                destination_id = result[0]
+            else:
+                cursor.execute(
+                    f"SELECT id FROM {self.schema_name}.named_entities_group WHERE name = %s",
+                    (to_text,),
+                )
+                row = cursor.fetchone()
+                destination_id = row[0] if row is not None else None
+
+            # Get segment details - now we just use segment_id directly
+
+            cursor.execute(
+                f"""
+                INSERT INTO {self.schema_name}.named_entities (
+                    type, text, normalized_text, character_start, character_end, group_id,
+                    segment_id,
+                    appearance_count, percentage_to_segment_text, first_type_appearance, last_type_appearance, relevance_percentage
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    "Reference",
+                    reference_text,
+                    reference_text,
+                    0,
+                    0,
+                    destination_id,
+                    segment_id,
+                    0,
+                    0,
+                    False,
+                    False,
+                    0,
+                ),
             )
             connection.commit()
             connection.close()
@@ -350,21 +414,84 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         try:
             connection, cursor = self.get_connection()
-            cursor.execute(
-                f"SELECT id, segment_text, reference_text, to_text, created_at FROM {self.schema_name}.references ORDER BY id"
-            )
-            rows = cursor.fetchall()
+            # Fetch destinations
+            cursor.execute(f"SELECT id, name FROM {self.schema_name}.named_entities_group ORDER BY id")
+            destinations = cursor.fetchall()
+
+            groups = []
+            from ner_in_docker.domain.NamedEntityGroup import NamedEntityGroup
+            from ner_in_docker.domain.NamedEntity import NamedEntity
+            from ner_in_docker.domain.NamedEntityType import NamedEntityType
+            from pdf_features import Rectangle
+            from ner_in_docker.domain.Segment import Segment
+
+            for dest_id, dest_name in destinations:
+                group = NamedEntityGroup(
+                    type=NamedEntityType.REFERENCE,
+                    name=dest_name,
+                    segment=None,
+                    named_entities=[],
+                )
+
+                cursor.execute(
+                    f"""
+                    SELECT ne.id, ne.text, s.text, s.page_number, s.segment_number, s.type, s.source_id, s.bounding_box_left, s.bounding_box_top, s.bounding_box_width, s.bounding_box_height
+                    FROM {self.schema_name}.named_entities ne
+                    LEFT JOIN {self.schema_name}.segments s ON ne.segment_id = s.id
+                    WHERE ne.group_id = %s AND ne.type = 'Reference'
+                    ORDER BY ne.id
+                    """,
+                    (dest_id,),
+                )
+
+                refs = cursor.fetchall()
+                for ref in refs:
+                    ref_id, ref_text = ref[0], ref[1]
+                    (
+                        segment_text,
+                        segment_page_number,
+                        segment_segment_number,
+                        segment_type,
+                        segment_source_id,
+                        segment_bounding_box_left,
+                        segment_bounding_box_top,
+                        segment_bounding_box_width,
+                        segment_bounding_box_height,
+                    ) = (
+                        ref[2],
+                        ref[3],
+                        ref[4],
+                        ref[5],
+                        ref[6],
+                        ref[7],
+                        ref[8],
+                        ref[9],
+                        ref[10],
+                    )
+
+                    segment = None
+                    if segment_text is not None or segment_source_id is not None:
+                        segment = Segment(
+                            text=segment_text if segment_text else "",
+                            page_number=(segment_page_number if segment_page_number else 0),
+                            segment_number=(segment_segment_number if segment_segment_number else 0),
+                            type=segment_type if segment_type else "Text",
+                            source_id=segment_source_id if segment_source_id else "",
+                            bounding_box=Rectangle.from_width_height(
+                                left=(segment_bounding_box_left if segment_bounding_box_left else 0),
+                                top=(segment_bounding_box_top if segment_bounding_box_top else 0),
+                                width=(segment_bounding_box_width if segment_bounding_box_width else 0),
+                                height=(segment_bounding_box_height if segment_bounding_box_height else 0),
+                            ),
+                        )
+
+                    entity = NamedEntity(type=NamedEntityType.REFERENCE, text=ref_text, segment=segment)
+                    group.named_entities.append(entity)
+
+                groups.append(group.model_dump())
+
             connection.close()
-            return [
-                {
-                    "id": row[0],
-                    "segment_text": row[1],
-                    "reference_text": row[2],
-                    "to_text": row[3],
-                    "created_at": row[4].isoformat() if row[4] else None,
-                }
-                for row in rows
-            ]
+            return groups
         except Exception as e:
             print(f"Error getting references: {e}")
             return []
@@ -375,7 +502,16 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         try:
             connection, cursor = self.get_connection()
-            cursor.execute(f"DELETE FROM {self.schema_name}.references WHERE id = %s", (reference_id,))
+            cursor.execute(
+                f"DELETE FROM {self.schema_name}.named_entities WHERE id = %s AND type = 'Reference'",
+                (reference_id,),
+            )
+            cursor.execute(
+                f"""
+                DELETE FROM {self.schema_name}.named_entities_group
+                WHERE id NOT IN (SELECT DISTINCT group_id FROM {self.schema_name}.named_entities WHERE type = 'Reference' AND group_id IS NOT NULL)
+            """
+            )
             connection.commit()
             connection.close()
             return True

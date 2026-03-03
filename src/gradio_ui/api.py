@@ -268,7 +268,7 @@ def create_reference(namespace: str, reference_text: str, to_text: str) -> str:
         return "<p style='color: red;'>Please provide reference text and target text.</p>"
 
     try:
-        data = {"namespace": namespace, "segment_text": "", "reference_text": reference_text, "to_text": to_text}
+        data = {"namespace": namespace, "reference_text": reference_text, "to_text": to_text}
         response = requests.post(f"{NER_SERVICE_URL}/create_reference", data=data, timeout=30)
 
         if response.status_code == 200:

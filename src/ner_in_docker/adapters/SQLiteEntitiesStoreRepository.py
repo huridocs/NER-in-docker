@@ -8,9 +8,9 @@ from ner_in_docker.ports.EntitiesStoreRepository import EntitiesStoreRepository
 
 
 class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
-    def __init__(self, database_name: str = None):
-        self.database_name = database_name if database_name else "named_entities.db"
-        self.database_path = Path(ROOT_PATH, "data", database_name)
+    def __init__(self, database_name: str | None = None):
+        self.database_name: str = database_name or "named_entities.db"
+        self.database_path = Path(ROOT_PATH, "data", self.database_name)
 
     def get_connection(self):
         connection = sqlite3.connect(self.database_path)
@@ -83,7 +83,7 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
             self.create_database()
         try:
             connection, cursor = self.get_connection()
-            source_ids = set(entity.segment.source_id for entity in named_entities)
+            source_ids = set(entity.segment.source_id for entity in named_entities if entity.segment is not None)
             cursor.execute(
                 "DELETE FROM named_entities WHERE segment_source_id IN ({})".format(", ".join("?" for _ in source_ids)),
                 tuple(source_ids),
@@ -160,3 +160,15 @@ class SQLiteEntitiesStoreRepository(EntitiesStoreRepository):
         result = cursor.fetchone() is not None
         connection.close()
         return result
+
+    def save_segments(self, segments: list) -> bool:
+        return False
+
+    def get_segments(self, identifier: str) -> list:
+        return []
+
+    def get_identifiers(self) -> list[str]:
+        return []
+
+    def save_reference(self, segment_id: int | None, reference_text: str, to_text: str) -> bool:
+        return False

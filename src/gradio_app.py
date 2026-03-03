@@ -168,21 +168,24 @@ with gr.Blocks(
                         return "<p>No references found</p>"
 
                     cards_html = '<div style="display: flex; flex-direction: column; gap: 10px;">'
-                    for ref in refs:
-                        ref_id = ref.get("id")
-                        ref_text = ref.get("reference_text", "N/A")
-                        to_text = ref.get("to_text", "N/A")
-                        created_at = ref.get("created_at", "N/A")
+                    for group in refs:
+                        group_name = group.get("name", "N/A")
+                        entities = group.get("named_entities", [])
+                        for entity in entities:
+                            # We don't have id in NamedEntity, so we can't delete by ID easily without modifying NamedEntity
+                            # unless we return the id from the database. Let's just remove the delete button.
+                            ref_text = entity.get("text", "N/A")
+                            segment = entity.get("segment")
+                            segment_text = segment.get("text", "N/A") if segment else "N/A"
 
-                        details = f"## Reference Details\n\n**ID:** {ref_id}\n\n**Reference Text:** {ref_text}\n\n**To:** {to_text}\n\n**Created At:** {created_at}"
+                            details = f"## Reference Details\\n\\n**To:** {group_name}\\n\\n**Reference Text:** {ref_text}\\n\\n**Segment:** {segment_text}"
 
-                        cards_html += f"""<div style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
-                            <div style="font-weight: bold; margin-bottom: 5px;">Reference #{ref_id}</div>
-                            <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;"><strong>Reference:</strong> {ref_text}</div>
-                            <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;"><strong>To:</strong> {to_text}</div>
-                            <button class="gradio-button secondary sm" onclick="document.getElementById('ref-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`">Show</button>
-                            <button class="gradio-button danger sm" onclick="deleteRef({ref_id}, '{namespace}')">Delete</button>
-                        </div>"""
+                            cards_html += f"""<div style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">Destination: {group_name}</div>
+                                <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;"><strong>Reference:</strong> {ref_text}</div>
+                                <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;"><strong>Segment:</strong> {segment_text}</div>
+                                <button class="gradio-button secondary sm" onclick="document.getElementById('ref-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`">Show</button>
+                            </div>"""
                     cards_html += "</div>"
 
                     return cards_html
