@@ -115,31 +115,78 @@ with tab_create_ref:
             segments = get_segments(identifier, namespace_ref)
 
         if segments:
-            segment_data = [
-                {
-                    "#": seg.get("segment_number", ""),
-                    "Page": seg.get("page_number", ""),
-                    "Type": seg.get("type", ""),
-                    "Text": seg.get("text", ""),
-                    "ID": seg.get("id", ""),
-                }
+            # Initialize selected segment index
+            if "selected_segment_idx" not in st.session_state:
+                st.session_state.selected_segment_idx = None
+
+            # Create dropdown for quick segment selection
+            segment_options = [
+                f"#{seg.get('segment_number', 'N/A')} - Page {seg.get('page_number', 'N/A')} ({seg.get('type', 'N/A')}) - {seg.get('text', '')[:50]}..."
                 for seg in segments
             ]
 
-            # Use dataframe with row selection
-            event = st.dataframe(
-                segment_data,
-                use_container_width=True,
-                height=400,
-                key="segments_df",
-                on_select="rerun",
-                selection_mode="single-row",
+            # Add "None" option at the beginning
+            segment_options_with_none = ["-- Select a segment --"] + segment_options
+
+            selected_option = st.selectbox(
+                "Quick Select",
+                options=range(len(segment_options_with_none)),
+                format_func=lambda i: segment_options_with_none[i],
+                index=(
+                    (st.session_state.selected_segment_idx + 1) if st.session_state.selected_segment_idx is not None else 0
+                ),
+                key="segment_quick_select",
             )
 
-            selected_rows = event.selection.rows if event and hasattr(event, "selection") else []
+            # Update selection based on dropdown
+            if selected_option == 0:
+                st.session_state.selected_segment_idx = None
+            else:
+                st.session_state.selected_segment_idx = selected_option - 1
 
-            if selected_rows:
-                selected_idx = selected_rows[0]
+            st.markdown("---")
+
+            # Create scrollable container for cards (showing only a subset for performance)
+            st.markdown("**Segment Cards:**")
+
+            with st.container(height=300):
+                for idx, seg in enumerate(segments):
+                    is_selected = st.session_state.selected_segment_idx == idx
+
+                    with st.container(border=is_selected):
+                        header_cols = st.columns([6, 1, 1, 2])
+                        with header_cols[0]:
+                            st.markdown(f"**#{seg.get('segment_number', 'N/A')}**")
+                        with header_cols[1]:
+                            st.caption(f"P{seg.get('page_number', 'N/A')}")
+                        with header_cols[2]:
+                            st.caption(f"{seg.get('type', 'N/A')}")
+                        with header_cols[3]:
+                            seg_id = seg.get("id", "N/A")
+                            seg_id_str = str(seg_id) if seg_id != "N/A" else "N/A"
+                            st.caption(f"ID: {seg_id_str[:8]}...")
+
+                        text = seg.get("text", "")
+                        preview_text = text[:150] + "..." if len(text) > 150 else text
+                        st.markdown(f"{preview_text}")
+
+                        # Use a checkbox for selection instead of button to avoid rerun
+                        is_checked = st.checkbox(
+                            "Selected" if is_selected else "Select this segment", value=is_selected, key=f"check_seg_{idx}"
+                        )
+
+                        if is_checked and not is_selected:
+                            st.session_state.selected_segment_idx = idx
+                            st.rerun()
+                        elif not is_checked and is_selected:
+                            st.session_state.selected_segment_idx = None
+                            st.rerun()
+
+                        st.markdown("---")
+
+            # Handle selected segment display
+            selected_idx = st.session_state.selected_segment_idx
+            if selected_idx is not None and selected_idx < len(segments):
                 seg = segments[selected_idx]
                 st.markdown("#### Selected Segment Details")
                 st.markdown(
@@ -148,7 +195,7 @@ with tab_create_ref:
                 st.markdown(f"**Text:** {seg.get('text', '')}")
                 selected_segment_id = str(seg.get("id", ""))
             else:
-                st.info("Click on a row in the table above to select a segment")
+                st.info("Select a segment from the dropdown or cards above")
                 selected_segment_id = None
         else:
             st.info("No segments found")

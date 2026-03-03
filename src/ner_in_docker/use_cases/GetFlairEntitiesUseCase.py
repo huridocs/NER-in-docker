@@ -5,7 +5,7 @@ from ner_in_docker.domain.NamedEntity import NamedEntity
 from flair.data import Sentence, Span
 from ner_in_docker.domain.NamedEntityType import NamedEntityType
 
-flair_model = Classifier.load(Path(MODELS_PATH, "flair", "pytorch_model.bin"))
+# flair_model = Classifier.load(Path(MODELS_PATH, "flair", "pytorch_model.bin"))
 
 
 class GetFlairEntitiesUseCase:
