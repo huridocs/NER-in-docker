@@ -95,8 +95,14 @@ with tab_create_ref:
 
     with col1:
         namespace_ref = st.text_input("Namespace", value="default_namespace", key="namespace_ref")
-        if st.button("Refresh Identifiers", key="refresh_btn"):
-            st.session_state.identifiers = get_identifiers(namespace_ref)
+        col_refresh1, col_refresh2 = st.columns([1, 1])
+        with col_refresh1:
+            if st.button("Refresh Identifiers", key="refresh_btn"):
+                st.session_state.identifiers = get_identifiers(namespace_ref)
+        with col_refresh2:
+            if st.button("Refresh Segments", key="refresh_segments_btn"):
+                st.session_state["refresh_segments"] = True
+                st.rerun()
 
         if "identifiers" not in st.session_state:
             st.session_state.identifiers = get_identifiers(namespace_ref)
@@ -112,7 +118,13 @@ with tab_create_ref:
 
         segments = []
         if identifier:
-            segments = get_segments(identifier, namespace_ref)
+            cache_key = f"segments_{namespace_ref}_{identifier}"
+            if cache_key not in st.session_state or "refresh_segments" in st.session_state:
+                with st.spinner("Loading segments..."):
+                    st.session_state[cache_key] = get_segments(identifier, namespace_ref)
+                if "refresh_segments" in st.session_state:
+                    del st.session_state["refresh_segments"]
+            segments = st.session_state[cache_key]
 
         if segments:
             # Initialize selected segment index
@@ -170,18 +182,8 @@ with tab_create_ref:
                         preview_text = text[:150] + "..." if len(text) > 150 else text
                         st.markdown(f"{preview_text}")
 
-                        # Use a checkbox for selection instead of button to avoid rerun
-                        is_checked = st.checkbox(
-                            "Selected" if is_selected else "Select this segment", value=is_selected, key=f"check_seg_{idx}"
-                        )
-
-                        if is_checked and not is_selected:
+                        if st.button("Select", key=f"select_seg_{idx}", disabled=is_selected):
                             st.session_state.selected_segment_idx = idx
-                            st.rerun()
-                        elif not is_checked and is_selected:
-                            st.session_state.selected_segment_idx = None
-                            st.rerun()
-
                         st.markdown("---")
 
             # Handle selected segment display
