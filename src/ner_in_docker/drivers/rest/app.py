@@ -186,3 +186,20 @@ async def get_named_entities_llm(
             repository.save_identifier(identifier)
 
     return NamedEntitiesResponse.from_groups(named_entities_groups)
+
+
+@app.post("/create_reference")
+@catch_exceptions
+async def create_reference(
+    namespace: str = Form(...),
+    segment_text: str = Form(None),
+    reference_text: str = Form(...),
+    to_text: str = Form(...),
+    language: str = Form("en"),
+):
+    store_repository = PostgresEntitiesStoreRepository(namespace, language)
+    success = store_repository.save_reference(segment_text, reference_text, to_text)
+    if success:
+        return {"status": "success", "message": "Reference created successfully"}
+    else:
+        return {"status": "error", "message": "Failed to create reference"}

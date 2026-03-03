@@ -258,3 +258,26 @@ def get_segments(identifier: str, namespace: str = "default_namespace") -> str:
         return f"Error: {response.status_code}"
     except Exception as e:
         return str(e)
+
+
+def create_reference(namespace: str, reference_text: str, to_text: str) -> str:
+    """Create a reference in the backend."""
+    if not namespace:
+        namespace = "default_namespace"
+    if not reference_text or not to_text:
+        return "<p style='color: red;'>Please provide reference text and target text.</p>"
+
+    try:
+        data = {"namespace": namespace, "segment_text": "", "reference_text": reference_text, "to_text": to_text}
+        response = requests.post(f"{NER_SERVICE_URL}/create_reference", data=data, timeout=30)
+
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("status") == "success":
+                return "<p style='color: green;'>Reference created successfully!</p>"
+            else:
+                return f"<p style='color: red;'>Error: {result.get('message')}</p>"
+        else:
+            return f"<p style='color: red;'>Error: Service returned status code {response.status_code}</p>"
+    except Exception as e:
+        return f"<p style='color: red;'>Error: {str(e)}</p>"

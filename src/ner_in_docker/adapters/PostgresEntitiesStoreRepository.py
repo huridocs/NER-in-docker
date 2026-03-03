@@ -9,7 +9,7 @@ import os
 class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
     def __init__(self, schema_name: str = "public", language: str = "en"):
         self.language = language
-        self.schema_name = schema_name
+        self.schema_name = f"{schema_name}_{language}"
         self.host = os.environ.get("POSTGRES_HOST", "postgres")
         self.port = os.environ.get("POSTGRES_PORT", "5432")
         self.dbname = os.environ.get("POSTGRES_DB", "ner_db")
@@ -67,9 +67,20 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
         )
         cursor.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.schema_name}.identifiers_{self.language} (
+            CREATE TABLE IF NOT EXISTS {self.schema_name}.identifiers (
                 id SERIAL PRIMARY KEY,
                 identifier TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+        )
+        cursor.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.schema_name}.references (
+                id SERIAL PRIMARY KEY,
+                segment_text TEXT,
+                reference_text TEXT NOT NULL,
+                to_text TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """
@@ -165,7 +176,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
         try:
             connection, cursor = self.get_connection()
             cursor.execute(
-                f"INSERT INTO {self.schema_name}.identifiers_{self.language} (identifier) VALUES (%s) ON CONFLICT DO NOTHING",
+                f"INSERT INTO {self.schema_name}.identifiers (identifier) VALUES (%s) ON CONFLICT DO NOTHING",
                 (identifier,),
             )
             connection.commit()
@@ -181,9 +192,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         try:
             connection, cursor = self.get_connection()
-            cursor.execute(
-                f"SELECT 1 FROM {self.schema_name}.identifiers_{self.language} WHERE identifier = %s", (identifier,)
-            )
+            cursor.execute(f"SELECT 1 FROM {self.schema_name}.identifiers WHERE identifier = %s", (identifier,))
             result = cursor.fetchone() is not None
             connection.close()
             return result
@@ -199,7 +208,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
             cursor.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {self.schema_name}.segments_{self.language} (
+                CREATE TABLE IF NOT EXISTS {self.schema_name}.segments (
                     id SERIAL PRIMARY KEY,
                     text TEXT,
                     page_number INTEGER,
@@ -220,13 +229,13 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
             if source_ids:
                 format_strings = ",".join(["%s"] * len(source_ids))
                 cursor.execute(
-                    f"DELETE FROM {self.schema_name}.segments_{self.language} WHERE source_id IN ({format_strings})",
+                    f"DELETE FROM {self.schema_name}.segments WHERE source_id IN ({format_strings})",
                     tuple(source_ids),
                 )
 
             cursor.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {self.schema_name}.identifiers_{self.language} (
+                CREATE TABLE IF NOT EXISTS {self.schema_name}.identifiers (
                     id SERIAL PRIMARY KEY,
                     identifier TEXT UNIQUE NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -237,7 +246,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
             for segment in segments:
                 cursor.execute(
                     f"""
-                    INSERT INTO {self.schema_name}.segments_{self.language} (
+                    INSERT INTO {self.schema_name}.segments (
                         text, page_number, segment_number, type, source_id,
                         bounding_box_left, bounding_box_top, bounding_box_width, bounding_box_height,
                         page_width, page_height
@@ -260,7 +269,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
             for source_id in source_ids:
                 cursor.execute(
-                    f"INSERT INTO {self.schema_name}.identifiers_{self.language} (identifier) VALUES (%s) ON CONFLICT DO NOTHING",
+                    f"INSERT INTO {self.schema_name}.identifiers (identifier) VALUES (%s) ON CONFLICT DO NOTHING",
                     (source_id,),
                 )
 
@@ -277,7 +286,7 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         try:
             connection, cursor = self.get_connection()
-            cursor.execute(f"SELECT * FROM {self.schema_name}.segments_{self.language} WHERE source_id = %s", (identifier,))
+            cursor.execute(f"SELECT * FROM {self.schema_name}.segments WHERE source_id = %s", (identifier,))
             rows = cursor.fetchall()
             connection.close()
 
@@ -308,10 +317,29 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
 
         try:
             connection, cursor = self.get_connection()
-            cursor.execute(f"SELECT identifier FROM {self.schema_name}.identifiers_{self.language}")
+            cursor.execute(f"SELECT identifier FROM {self.schema_name}.identifiers")
             rows = cursor.fetchall()
             connection.close()
             return [row[0] for row in rows]
         except Exception as e:
             print(f"Error getting identifiers: {e}")
             return []
+
+    def save_reference(self, segment_text: str, reference_text: str, to_text: str) -> bool:
+        self.create_database()
+
+        try:
+            connection, cursor = self.get_connection()
+            cursor.execute(
+                f"""
+                INSERT INTO {self.schema_name}.references (segment_text, reference_text, to_text)
+                VALUES (%s, %s, %s)
+                """,
+                (segment_text, reference_text, to_text),
+            )
+            connection.commit()
+            connection.close()
+            return True
+        except Exception as e:
+            print(f"Error saving reference: {e}")
+            return False

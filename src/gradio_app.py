@@ -12,6 +12,7 @@ from gradio_ui.api import (
     wait_for_backend,
     get_identifiers,
     get_segments,
+    create_reference,
 )
 from gradio_ui.formatters import create_legend
 from gradio_ui.constants import NER_SERVICE_URL
@@ -74,12 +75,19 @@ with gr.Blocks(
                         placeholder="Enter target...",
                     )
                     create_reference_btn = gr.Button("Create Reference", variant="primary")
+                    create_reference_output = gr.HTML()
 
             def update_dropdown(ns):
                 choices = get_identifiers(ns)
                 return gr.Dropdown(choices=choices, value=choices[0] if choices else None)
 
             refresh_btn.click(fn=update_dropdown, inputs=[namespace_ref_input], outputs=[identifier_dropdown])
+
+            create_reference_btn.click(
+                fn=create_reference,
+                inputs=[namespace_ref_input, reference_text_input, to_input],
+                outputs=[create_reference_output],
+            )
 
             def display_segments(identifier, namespace):
                 if not identifier:
