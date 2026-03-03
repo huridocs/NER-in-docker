@@ -203,3 +203,21 @@ async def create_reference(
         return {"status": "success", "message": "Reference created successfully"}
     else:
         return {"status": "error", "message": "Failed to create reference"}
+
+
+@app.get("/references")
+@catch_exceptions
+async def get_references(namespace: str = "default_namespace", language: str = "en"):
+    store_repository = PostgresEntitiesStoreRepository(namespace, language)
+    return store_repository.get_references()
+
+
+@app.post("/delete_reference")
+@catch_exceptions
+async def delete_reference(namespace: str = Form(...), reference_id: int = Form(...), language: str = "en"):
+    store_repository = PostgresEntitiesStoreRepository(namespace, language)
+    success = store_repository.delete_reference(reference_id)
+    if success:
+        return {"status": "success", "message": "Reference deleted successfully"}
+    else:
+        return {"status": "error", "message": "Failed to delete reference"}

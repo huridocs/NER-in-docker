@@ -5,10 +5,13 @@ from rapidfuzz import fuzz
 from ner_in_docker.domain.NamedEntity import NamedEntity
 import re
 
+from ner_in_docker.domain.Segment import Segment
+
 
 class NamedEntityGroup(BaseModel):
     type: NamedEntityType
     name: str
+    segment: Segment | None = None
     named_entities: list[NamedEntity] = list()
     top_relevance_entity: NamedEntity = None
 

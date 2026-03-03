@@ -13,6 +13,8 @@ from gradio_ui.api import (
     get_identifiers,
     get_segments,
     create_reference,
+    get_references,
+    delete_reference,
 )
 from gradio_ui.formatters import create_legend
 from gradio_ui.constants import NER_SERVICE_URL
@@ -43,7 +45,7 @@ with gr.Blocks(
 
     with gr.Tabs():
         # Tab 0: References
-        with gr.Tab("📚 References"):
+        with gr.Tab("📚 Create references"):
             gr.Markdown("### View References")
 
             with gr.Row():
@@ -138,6 +140,62 @@ with gr.Blocks(
                 inputs=[identifier_dropdown, namespace_ref_input],
                 outputs=[segments_container, selected_segment],
             )
+
+        # Tab: Manage References
+        with gr.Tab("📋 Manage References"):
+            gr.Markdown("### View and Manage References")
+
+            with gr.Row():
+                with gr.Column(scale=1):
+                    namespace_manage_ref = gr.Textbox(
+                        label="Namespace",
+                        value="default_namespace",
+                    )
+                    refresh_refs_btn = gr.Button("Refresh References")
+                    gr.Markdown("#### References")
+                    refs_container = gr.HTML(elem_id="refs-scrollable")
+                with gr.Column(scale=2):
+                    gr.Markdown("#### Reference Details")
+                    selected_ref_details = gr.HTML(elem_id="ref-details")
+
+            def display_references(namespace):
+                if not namespace:
+                    return "<p>Please enter a namespace</p>"
+
+                try:
+                    refs = get_references(namespace)
+                    if not refs:
+                        return "<p>No references found</p>"
+
+                    cards_html = '<div style="display: flex; flex-direction: column; gap: 10px;">'
+                    for ref in refs:
+                        ref_id = ref.get("id")
+                        ref_text = ref.get("reference_text", "N/A")
+                        to_text = ref.get("to_text", "N/A")
+                        created_at = ref.get("created_at", "N/A")
+
+                        details = f"## Reference Details\n\n**ID:** {ref_id}\n\n**Reference Text:** {ref_text}\n\n**To:** {to_text}\n\n**Created At:** {created_at}"
+
+                        cards_html += f"""<div style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">Reference #{ref_id}</div>
+                            <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;"><strong>Reference:</strong> {ref_text}</div>
+                            <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;"><strong>To:</strong> {to_text}</div>
+                            <button class="gradio-button secondary sm" onclick="document.getElementById('ref-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`">Show</button>
+                            <button class="gradio-button danger sm" onclick="deleteRef({ref_id}, '{namespace}')">Delete</button>
+                        </div>"""
+                    cards_html += "</div>"
+
+                    return cards_html
+                except Exception as e:
+                    return f"<p>Error: {str(e)}</p>"
+
+            def delete_ref_handler(ref_id, namespace):
+                result = delete_reference(namespace, ref_id)
+                if result == "success":
+                    return display_references(namespace)
+                return f"<p>Error deleting reference: {result}</p>"
+
+            refresh_refs_btn.click(fn=display_references, inputs=[namespace_manage_ref], outputs=[refs_container])
 
         # Tab 1: Save Texts from PDFs
         with gr.Tab("💾 Save Texts"):

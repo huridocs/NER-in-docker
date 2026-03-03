@@ -343,3 +343,42 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
         except Exception as e:
             print(f"Error saving reference: {e}")
             return False
+
+    def get_references(self) -> list:
+        if not self.exists_schema():
+            return []
+
+        try:
+            connection, cursor = self.get_connection()
+            cursor.execute(
+                f"SELECT id, segment_text, reference_text, to_text, created_at FROM {self.schema_name}.references ORDER BY id"
+            )
+            rows = cursor.fetchall()
+            connection.close()
+            return [
+                {
+                    "id": row[0],
+                    "segment_text": row[1],
+                    "reference_text": row[2],
+                    "to_text": row[3],
+                    "created_at": row[4].isoformat() if row[4] else None,
+                }
+                for row in rows
+            ]
+        except Exception as e:
+            print(f"Error getting references: {e}")
+            return []
+
+    def delete_reference(self, reference_id: int) -> bool:
+        if not self.exists_schema():
+            return False
+
+        try:
+            connection, cursor = self.get_connection()
+            cursor.execute(f"DELETE FROM {self.schema_name}.references WHERE id = %s", (reference_id,))
+            connection.commit()
+            connection.close()
+            return True
+        except Exception as e:
+            print(f"Error deleting reference: {e}")
+            return False

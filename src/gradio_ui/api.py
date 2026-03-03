@@ -281,3 +281,32 @@ def create_reference(namespace: str, reference_text: str, to_text: str) -> str:
             return f"<p style='color: red;'>Error: Service returned status code {response.status_code}</p>"
     except Exception as e:
         return f"<p style='color: red;'>Error: {str(e)}</p>"
+
+
+def get_references(namespace: str = "default_namespace") -> list:
+    """Get all references for a given namespace."""
+    try:
+        response = requests.get(f"{NER_SERVICE_URL}/references", params={"namespace": namespace}, timeout=30)
+        if response.status_code == 200:
+            return response.json()
+        return []
+    except Exception:
+        return []
+
+
+def delete_reference(namespace: str, reference_id: int) -> str:
+    """Delete a reference by ID."""
+    try:
+        data = {"namespace": namespace, "reference_id": reference_id}
+        response = requests.post(f"{NER_SERVICE_URL}/delete_reference", data=data, timeout=30)
+
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("status") == "success":
+                return "success"
+            else:
+                return f"Error: {result.get('message')}"
+        else:
+            return f"Error: Service returned status code {response.status_code}"
+    except Exception as e:
+        return f"Error: {str(e)}"
