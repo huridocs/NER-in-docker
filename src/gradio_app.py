@@ -69,7 +69,6 @@ with gr.Blocks(
                     selected_segment_id = gr.Textbox(elem_id="selected-segment-id", visible=False)
 
                     gr.Markdown("#### Create Reference")
-                    selected_segment_id = gr.Textbox(elem_id="selected-segment-id", visible=False)
                     reference_text_input = gr.Textbox(
                         label="Reference Text",
                         placeholder="Enter reference text...",
@@ -83,9 +82,16 @@ with gr.Blocks(
 
             def update_dropdown(ns):
                 choices = get_identifiers(ns)
-                return gr.Dropdown(choices=choices, value=choices[0] if choices else None), []
+                if choices:
+                    segments_html, details_html = display_segments(choices[0], ns)
+                    return gr.update(choices=choices, value=choices[0]), segments_html, details_html
+                return gr.update(choices=[], value=None), "", ""
 
-            refresh_btn.click(fn=update_dropdown, inputs=[namespace_ref_input], outputs=[identifier_dropdown])
+            refresh_btn.click(
+                fn=update_dropdown,
+                inputs=[namespace_ref_input],
+                outputs=[identifier_dropdown, segments_container, selected_segment],
+            )
 
             create_reference_btn.click(
                 fn=create_reference,
