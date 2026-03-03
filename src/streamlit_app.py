@@ -121,28 +121,34 @@ with tab_create_ref:
                     "Page": seg.get("page_number", ""),
                     "Type": seg.get("type", ""),
                     "Text": seg.get("text", ""),
+                    "ID": seg.get("id", ""),
                 }
                 for seg in segments
             ]
-            st.dataframe(segment_data, use_container_width=True, height=400, key="segments_df")
 
-            selected_segment_idx = st.selectbox(
-                "Select a segment",
-                options=range(len(segments)),
-                format_func=lambda i: f"Segment {segments[i].get('segment_number', 'N/A')} - Page {segments[i].get('page_number', 'N/A')}",
-                key="segment_select",
+            # Use dataframe with row selection
+            event = st.dataframe(
+                segment_data,
+                use_container_width=True,
+                height=400,
+                key="segments_df",
+                on_select="rerun",
+                selection_mode="single-row",
             )
 
-            if selected_segment_idx is not None:
-                seg = segments[selected_segment_idx]
-                st.markdown("#### Segment Details")
+            selected_rows = event.selection.rows if event and hasattr(event, "selection") else []
+
+            if selected_rows:
+                selected_idx = selected_rows[0]
+                seg = segments[selected_idx]
+                st.markdown("#### Selected Segment Details")
                 st.markdown(
                     f"**Segment:** {seg.get('segment_number', 'N/A')} | **Page:** {seg.get('page_number', 'N/A')} | **Type:** {seg.get('type', 'N/A')} | **ID:** {seg.get('id', 'N/A')}"
                 )
                 st.markdown(f"**Text:** {seg.get('text', '')}")
-
                 selected_segment_id = str(seg.get("id", ""))
             else:
+                st.info("Click on a row in the table above to select a segment")
                 selected_segment_id = None
         else:
             st.info("No segments found")
