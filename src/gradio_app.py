@@ -174,53 +174,160 @@ with gr.Blocks(
                         value="default_namespace",
                     )
                     refresh_refs_btn = gr.Button("Refresh References")
-                    gr.Markdown("#### References")
-                    refs_container = gr.HTML(elem_id="refs-scrollable")
+                    gr.Markdown("#### Destinations")
+                    destinations_df = gr.Dataframe(
+                        headers=["Destination", "Count"],
+                        datatype=["str", "number"],
+                        interactive=False,
+                        wrap=True,
+                        label="Click a row and press Compute to view references",
+                    )
+                    compute_btn = gr.Button("Compute", variant="primary")
                 with gr.Column(scale=2):
+                    gr.Markdown("#### References")
+                    refs_df = gr.Dataframe(
+                        headers=["ID", "Reference Text", "Segment"],
+                        datatype=["number", "str", "str"],
+                        interactive=False,
+                        wrap=True,
+                    )
+                    selected_ref_id = gr.State(None)
+                    delete_ref_btn = gr.Button("Delete Selected Reference", variant="stop")
+                    delete_ref_output = gr.HTML()
                     gr.Markdown("#### Reference Details")
                     selected_ref_details = gr.HTML(elem_id="ref-details")
 
+            refs_by_destination_state = gr.State({})
+            selected_destination_state = gr.State(None)
+
             def display_references(namespace):
                 if not namespace:
-                    return "<p>Please enter a namespace</p>"
+                    return {}, [], None, [], None, "<p>Please enter a namespace</p>"
 
                 try:
                     refs = get_references(namespace)
                     if not refs:
-                        return "<p>No references found</p>"
+                        return {}, [], None, [], None, "<p>No references found</p>"
 
-                    cards_html = '<div style="display: flex; flex-direction: column; gap: 10px;">'
+                    # Group references by destination
+                    refs_by_destination = {}
                     for group in refs:
                         group_name = group.get("name", "N/A")
                         entities = group.get("named_entities", [])
+                        refs_by_destination[group_name] = []
                         for entity in entities:
-                            # We don't have id in NamedEntity, so we can't delete by ID easily without modifying NamedEntity
-                            # unless we return the id from the database. Let's just remove the delete button.
+                            ref_id = entity.get("id")
                             ref_text = entity.get("text", "N/A")
                             segment = entity.get("segment")
-                            segment_text = segment.get("text", "N/A") if segment else "N/A"
+                            segment_text = (
+                                segment.get("text", "N/A")[:100] + "..." if segment and segment.get("text") else "N/A"
+                            )
 
-                            details = f"## Reference Details\\n\\n**To:** {group_name}\\n\\n**Reference Text:** {ref_text}\\n\\n**Segment:** {segment_text}"
+                            ref_data = {
+                                "id": ref_id,
+                                "destination": group_name,
+                                "reference_text": ref_text,
+                                "segment_text": segment_text,
+                                "segment": segment,
+                            }
+                            refs_by_destination[group_name].append(ref_data)
 
-                            cards_html += f"""<div style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">Destination: {group_name}</div>
-                                <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;"><strong>Reference:</strong> {ref_text}</div>
-                                <div style="margin-bottom: 10px; white-space: pre-wrap; word-wrap: break-word;"><strong>Segment:</strong> {segment_text}</div>
-                                <button class="gradio-button secondary sm" onclick="document.getElementById('ref-details').innerHTML = `{details.replace(chr(10), '<br>').replace('`', '&#96;')}`">Show</button>
-                            </div>"""
-                    cards_html += "</div>"
+                    # Build destinations table
+                    dest_rows = []
+                    for dest_name, dest_refs in refs_by_destination.items():
+                        dest_rows.append([dest_name, len(dest_refs)])
 
-                    return cards_html
+                    return refs_by_destination, dest_rows, None, [], None, ""
                 except Exception as e:
-                    return f"<p>Error: {str(e)}</p>"
+                    return {}, [], None, [], None, f"<p>Error: {str(e)}</p>"
 
-            def delete_ref_handler(ref_id, namespace):
+            def on_destination_select(destinations, refs_by_dest, evt: gr.SelectData):
+                row = evt.index[0]
+                if row >= len(destinations):
+                    return None, [], None
+                # Handle DataFrame properly - destinations is a pandas DataFrame
+                dest_name = destinations.iloc[row, 0]
+                refs = refs_by_dest.get(dest_name, [])
+
+                # Build references table rows
+                rows = []
+                for ref in refs:
+                    rows.append([ref.get("id"), ref.get("reference_text", ""), ref.get("segment_text", "")])
+
+                return dest_name, rows, None
+
+            def on_ref_select(refs, evt: gr.SelectData):
+                row = evt.index[0]
+                if row >= len(refs):
+                    return None, "<p>No reference selected.</p>"
+
+                # Handle DataFrame properly - refs is a pandas DataFrame
+                ref_id = refs.iloc[row, 0]
+                # Find the full reference data
+                return ref_id, f"<p>Selected reference ID: {ref_id}. Click 'Delete Selected Reference' to remove.</p>"
+
+            def compute_destination(refs_by_dest, selected_dest):
+                if not selected_dest:
+                    return [], None, "<p style='color: orange;'>Please select a destination first.</p>"
+
+                refs = refs_by_dest.get(selected_dest, [])
+                rows = []
+                for ref in refs:
+                    rows.append([ref.get("id"), ref.get("reference_text", ""), ref.get("segment_text", "")])
+
+                return rows, None, f"<p style='color: green;'>Loaded {len(rows)} references for '{selected_dest}'</p>"
+
+            def delete_ref_handler(ref_id, namespace, refs_by_dest):
+                if not ref_id:
+                    return "<p style='color: orange;'>Please select a reference to delete.</p>", refs_by_dest, [], None
+
                 result = delete_reference(namespace, ref_id)
                 if result == "success":
-                    return display_references(namespace)
-                return f"<p>Error deleting reference: {result}</p>"
+                    # Refresh the data
+                    new_refs_by_dest, dest_rows, _, _, _, _ = display_references(namespace)
+                    return "<p style='color: green;'>Reference deleted successfully!</p>", new_refs_by_dest, [], None
+                return f"<p style='color: red;'>Error deleting reference: {result}</p>", refs_by_dest, [], None
 
-            refresh_refs_btn.click(fn=display_references, inputs=[namespace_manage_ref], outputs=[refs_container])
+            refresh_refs_btn.click(
+                fn=display_references,
+                inputs=[namespace_manage_ref],
+                outputs=[
+                    refs_by_destination_state,
+                    destinations_df,
+                    selected_destination_state,
+                    refs_df,
+                    selected_ref_id,
+                    delete_ref_output,
+                ],
+            )
+
+            destinations_df.select(
+                fn=on_destination_select,
+                inputs=[destinations_df, refs_by_destination_state],
+                outputs=[selected_destination_state, refs_df, selected_ref_id],
+            )
+
+            compute_btn.click(
+                fn=compute_destination,
+                inputs=[refs_by_destination_state, selected_destination_state],
+                outputs=[refs_df, selected_ref_id, delete_ref_output],
+            )
+
+            refs_df.select(
+                fn=on_ref_select,
+                inputs=[refs_df],
+                outputs=[selected_ref_id, selected_ref_details],
+            )
+
+            delete_ref_btn.click(
+                fn=delete_ref_handler,
+                inputs=[selected_ref_id, namespace_manage_ref, refs_by_destination_state],
+                outputs=[delete_ref_output, refs_by_destination_state, refs_df, selected_ref_id],
+            ).then(
+                fn=lambda refs_by_dest: [[dest, len(refs)] for dest, refs in refs_by_dest.items()] if refs_by_dest else [],
+                inputs=[refs_by_destination_state],
+                outputs=[destinations_df],
+            )
 
         # Tab 1: Save Texts from PDFs
         with gr.Tab("💾 Save Texts"):

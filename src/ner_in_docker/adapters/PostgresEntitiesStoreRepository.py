@@ -485,7 +485,9 @@ class PostgresEntitiesStoreRepository(EntitiesStoreRepository):
                         )
 
                     entity = NamedEntity(type=NamedEntityType.REFERENCE, text=ref_text, segment=segment)
-                    group.named_entities.append(entity)
+                    entity_dict = entity.model_dump()
+                    entity_dict["id"] = ref_id
+                    group.named_entities.append(entity_dict)
 
                 groups.append(group.model_dump())
 
